@@ -88,6 +88,8 @@ ToolsToolBar::ToolsToolBar()
 
    mMessageOfTool[envelopeTool] = _("Click and drag to edit the amplitude envelope");
    mMessageOfTool[drawTool] = _("Click and drag to edit the samples");
+
+   // TODO:  Why not mention middle click to zoom normal on Windows too?
 #if defined( __WXMAC__ )
    mMessageOfTool[zoomTool] = _("Click to Zoom In, Shift-Click to Zoom Out");
 #elif defined( __WXMSW__ )
@@ -95,6 +97,7 @@ ToolsToolBar::ToolsToolBar()
 #elif defined( __WXGTK__ )
    mMessageOfTool[zoomTool] = _("Left=Zoom In, Right=Zoom Out, Middle=Normal");
 #endif
+
    mMessageOfTool[slideTool] = _("Click and drag to move a track in time");
    mMessageOfTool[multiTool] = wxT(""); // multi-mode tool
 

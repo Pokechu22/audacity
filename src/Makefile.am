@@ -573,6 +573,8 @@ audacity_SOURCES = \
 	tracks/ui/TrackUI.cpp \
 	tracks/ui/TrackVRulerControls.cpp \
 	tracks/ui/TrackVRulerControls.h \
+	tracks/ui/ZoomHandle.cpp \
+	tracks/ui/ZoomHandle.h \
 	tracks/wavetrack/ui/WaveTrackControls.cpp \
 	tracks/wavetrack/ui/WaveTrackControls.h \
 	tracks/wavetrack/ui/WaveTrackVRulerControls.cpp \

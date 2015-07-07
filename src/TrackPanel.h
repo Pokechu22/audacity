@@ -370,16 +370,8 @@ protected:
    virtual void AddClipsToCaptured(Track *t, bool withinSelection);
    virtual void AddClipsToCaptured(Track *t, double t0, double t1);
 
-   // AS: Handle zooming into tracks
-   virtual void HandleZoom(wxMouseEvent & event);
-   virtual void HandleZoomClick(wxMouseEvent & event);
-   virtual void HandleZoomDrag(wxMouseEvent & event);
-   virtual void HandleZoomButtonUp(wxMouseEvent & event);
-
    static bool IsDragZooming(int zoomStart, int zoomEnd);
    virtual bool IsDragZooming() { return IsDragZooming(mZoomStart, mZoomEnd); }
-   virtual void DragZoom(wxMouseEvent &event, int x);
-   virtual void DoZoomInOut(wxMouseEvent &event, int x);
 
    virtual void HandleVZoom(wxMouseEvent & event);
    virtual void HandleVZoomClick(wxMouseEvent & event);
@@ -744,8 +736,6 @@ protected:
       IsMinimizing,
       WasOverCutLine,
       IsPopping,
-      IsZooming,
-
    };
 
    enum MouseCaptureEnum mMouseCapture;

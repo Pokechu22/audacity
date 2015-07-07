@@ -9,6 +9,7 @@ Paul Licameli split from TrackPanel.cpp
 **********************************************************************/
 
 #include "../../Track.h"
+#include "../../TrackPanelMouseEvent.h"
 #include "TrackControls.h"
 #include "TrackVRulerControls.h"
 
@@ -16,8 +17,10 @@ Paul Licameli split from TrackPanel.cpp
 #include "../../Project.h"
 #include "../../toolbars/ToolsToolBar.h"
 
+#include "ZoomHandle.h"
+
 HitTestResult Track::HitTest
-(const TrackPanelMouseEvent &,
+(const TrackPanelMouseEvent &event,
  const AudacityProject *pProject)
 {
    const ToolsToolBar * pTtb = pProject->GetToolsToolBar();
@@ -25,10 +28,12 @@ HitTestResult Track::HitTest
    const bool isMultiTool = pTtb->IsDown(multiTool);
    if (!isMultiTool) {
       switch (pTtb->GetCurrentTool()) {
+      case zoomTool:
+         return ZoomHandle::HitAnywhere(event.event, pProject);
+
       case selectTool:
       case envelopeTool:
       case drawTool:
-      case zoomTool:
       case slideTool:
       default:
          // cases not yet implemented
@@ -42,6 +47,8 @@ HitTestResult Track::HitTest
 
    if (isMultiTool) {
       int currentTool = -1;
+      if (NULL != (result = ZoomHandle::HitTest(event.event, pProject)).preview.cursor)
+         currentTool = zoomTool;
 
       // To do: special hit tests
 

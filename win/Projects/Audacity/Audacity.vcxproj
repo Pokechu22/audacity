@@ -239,6 +239,7 @@
     <ClCompile Include="..\..\..\src\tracks\ui\TrackControls.cpp" />
     <ClCompile Include="..\..\..\src\tracks\ui\TrackUI.cpp" />
     <ClCompile Include="..\..\..\src\tracks\ui\TrackVRulerControls.cpp" />
+    <ClCompile Include="..\..\..\src\tracks\ui\ZoomHandle.cpp" />
     <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackControls.cpp" />
     <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackUI.cpp" />
     <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackVRulerControls.cpp" />
@@ -496,6 +497,7 @@
     <ClInclude Include="..\..\..\src\TranslatableStringArray.h" />
     <ClInclude Include="..\..\..\src\UserException.h" />
     <ClInclude Include="..\..\..\src\tracks\ui\TrackControls.h" />
+    <ClInclude Include="..\..\..\src\tracks\ui\ZoomHandle.h" />
     <ClInclude Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackControls.h" />
     <ClInclude Include="..\..\..\src\tracks\timetrack\ui\TimeTrackVRulerControls.h" />
     <ClInclude Include="..\..\..\src\tracks\ui\TrackVRulerControls.h" />
