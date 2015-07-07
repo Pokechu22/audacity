@@ -39,6 +39,10 @@ class TimeTrack final : public Track {
 
    virtual ~TimeTrack();
 
+   virtual HitTestResult HitTest
+      (const TrackPanelMouseEvent &event,
+       const AudacityProject *pProject);
+
    // Identifying the type of track
    int GetKind() const override { return Time; }
 
@@ -140,6 +144,10 @@ class TimeTrack final : public Track {
 
    wxBrush blankBrush;
    wxPen blankPen;
+
+protected:
+   virtual TrackControls *GetControls();
+   virtual TrackVRulerControls *GetVRulerControls();
 };
 
 

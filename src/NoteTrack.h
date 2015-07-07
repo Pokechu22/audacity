@@ -57,6 +57,10 @@ class AUDACITY_DLL_API NoteTrack final : public Track {
    NoteTrack(const std::shared_ptr<DirManager> &projDirManager);
    virtual ~NoteTrack();
 
+   virtual HitTestResult HitTest
+      (const TrackPanelMouseEvent &event,
+       const AudacityProject *pProject);
+
    using Holder = std::unique_ptr<NoteTrack>;
    Track::Holder Duplicate() const override;
 
@@ -213,6 +217,10 @@ class AUDACITY_DLL_API NoteTrack final : public Track {
    int mVisibleChannels; // bit set of visible channels
    int mLastMidiPosition;
    wxRect mGainPlacementRect;
+
+protected:
+   virtual TrackControls *GetControls();
+   virtual TrackVRulerControls *GetVRulerControls();
 };
 
 #endif // USE_MIDI

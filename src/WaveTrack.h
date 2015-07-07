@@ -102,8 +102,13 @@ class AUDACITY_DLL_API WaveTrack final : public Track {
    using Holder = std::unique_ptr<WaveTrack>;
 
    virtual ~WaveTrack();
-   double GetOffset() const override;
-   void SetOffset(double o) override;
+
+   virtual HitTestResult HitTest
+      (const TrackPanelMouseEvent &event,
+       const AudacityProject *pProject);
+
+   virtual double GetOffset() const override;
+   virtual void SetOffset (double o) override;
 
    /** @brief Get the time at which the first clip in the track starts
     *
@@ -615,6 +620,10 @@ class AUDACITY_DLL_API WaveTrack final : public Track {
 
    std::unique_ptr<SpectrogramSettings> mpSpectrumSettings;
    std::unique_ptr<WaveformSettings> mpWaveformSettings;
+
+protected:
+   virtual TrackControls *GetControls();
+   virtual TrackVRulerControls *GetVRulerControls();
 };
 
 // This is meant to be a short-lived object, during whose lifetime,

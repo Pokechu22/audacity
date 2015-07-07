@@ -24,6 +24,7 @@
 
 #include "Experimental.h"
 #include "SampleFormat.h"
+#include "tracks/ui/CommonTrackPanelCell.h"
 #include "xml/XMLTagHandler.h"
 
 #ifdef __WXMSW__
@@ -35,6 +36,8 @@ class DirManager;
 class Track;
 class LabelTrack;
 class TimeTrack;
+class TrackControls;
+class TrackVRulerControls;
 class WaveTrack;
 class NoteTrack;
 class AudacityProject;
@@ -73,7 +76,9 @@ using ListOfTracks = std::list<movable_ptr<Track>>;
 
 using TrackNodePointer = ListOfTracks::iterator;
 
-class AUDACITY_DLL_API Track /* not final */ : public XMLTagHandler
+class ViewInfo;
+
+class AUDACITY_DLL_API Track /* not final */ : public CommonTrackPanelCell, public XMLTagHandler
 {
    friend class TrackList;
    friend class TrackListIterator;
@@ -102,6 +107,18 @@ class AUDACITY_DLL_API Track /* not final */ : public XMLTagHandler
 
  public:
    mutable wxSize vrulerSize;
+
+   virtual HitTestResult HitTest
+      (const TrackPanelMouseEvent &event,
+       const AudacityProject *pProject) = 0;
+
+   // Return another, associated TrackPanelCell object that implements the
+   // drop-down, close and minimize buttons, etc.
+   TrackPanelCell *GetTrackControl();
+
+   // Return another, associated TrackPanelCell object that implements the
+   // mouse actions for the vertical ruler
+   TrackPanelCell *GetVRulerControl();
 
    // This just returns a constant and can be overriden by subclasses
    // to specify a different height for the case that the track is minimized.
@@ -249,6 +266,11 @@ class AUDACITY_DLL_API Track /* not final */ : public XMLTagHandler
 
    // Checks if sync-lock is on and any track in its sync-lock group is selected.
    bool IsSyncLockSelected() const;
+
+protected:
+   virtual Track *FindTrack(); // overrides method of CommonTrackPanelCell
+   virtual TrackControls *GetControls() = 0;
+   virtual TrackVRulerControls *GetVRulerControls() = 0;
 };
 
 class AUDACITY_DLL_API TrackListIterator /* not final */

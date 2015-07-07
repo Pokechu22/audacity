@@ -34,6 +34,7 @@ class EnvelopeEditor;
 class LabelTrack;
 class SpectrumAnalyst;
 class TrackPanel;
+class TrackPanelCell;
 class TrackArtist;
 class Ruler;
 class SnapManager;
@@ -51,6 +52,7 @@ class ViewInfo;
 class WaveTrack;
 class WaveClip;
 class Envelope;
+class UIHandle;
 
 // Declared elsewhere, to reduce compilation dependencies
 class TrackPanelListener;
@@ -82,7 +84,7 @@ public:
    TrackInfo(TrackPanel * pParentIn);
    ~TrackInfo();
 
-private:
+public:
    int GetTrackInfoWidth() const;
    void SetTrackInfoFont(wxDC *dc) const;
 
@@ -100,14 +102,19 @@ private:
    // Draw the minimize button *and* the sync-lock track icon, if necessary.
    void DrawMinimize(wxDC * dc, const wxRect & rect, Track * t, bool down) const;
 
-   void GetTrackControlsRect(const wxRect & rect, wxRect &dest) const;
-   void GetCloseBoxRect(const wxRect & rect, wxRect &dest) const;
-   void GetTitleBarRect(const wxRect & rect, wxRect &dest) const;
-   void GetMuteSoloRect(const wxRect & rect, wxRect &dest, bool solo, bool bHasSoloButton) const;
-   void GetGainRect(const wxRect & rect, wxRect &dest) const;
-   void GetPanRect(const wxRect & rect, wxRect &dest) const;
-   void GetMinimizeRect(const wxRect & rect, wxRect &dest) const;
-   void GetSyncLockIconRect(const wxRect & rect, wxRect &dest) const;
+   static void GetTrackControlsRect(const wxRect & rect, wxRect &dest);
+   static void GetCloseBoxRect(const wxRect & rect, wxRect &dest);
+   static void GetTitleBarRect(const wxRect & rect, wxRect &dest);
+   static void GetMuteSoloRect(const wxRect & rect, wxRect &dest, bool solo, bool bHasSoloButton);
+   static void GetGainRect(const wxRect & rect, wxRect &dest);
+   static void GetPanRect(const wxRect & rect, wxRect &dest);
+   static void GetMinimizeRect(const wxRect & rect, wxRect &dest);
+   static void GetSyncLockIconRect(const wxRect & rect, wxRect &dest);
+
+   // TrackSelFunc returns true if the click is not
+   // set up to be handled, but click is on the sync-lock icon or the blank area to
+   // the left of the minimize button, and we want to pass it forward to be a track select.
+   static bool TrackSelFunc(Track * t, wxRect rect, int x, int y);
 
 public:
    LWSlider * GainSlider(WaveTrack *t, bool captured = false) const;
@@ -194,6 +201,7 @@ class AUDACITY_DLL_API TrackPanel final : public OverlayPanel {
    //virtual void SetSnapTo(int snapto)
 
    virtual void HandleInterruptedDrag();
+   virtual void CancelDragging();
    virtual bool HandleEscapeKey(bool down);
    virtual void HandleAltKey(bool down);
    virtual void HandleShiftKey(bool down);
@@ -342,10 +350,12 @@ protected:
    virtual void SetCursorAndTipByTool( int tool, const wxMouseEvent & event, wxString &tip );
 
 public:
-   virtual void HandleCursor(const wxMouseEvent & event);
+   virtual void HandleCursor(wxMouseEvent & event);
 
 protected:
    virtual void MaySetOnDemandTip( Track * t, wxString &tip );
+
+   void FindCell(const wxMouseEvent &event, wxRect &inner, TrackPanelCell *& pCell, Track *& pTrack);
 
    // AS: Envelope editing handlers
    virtual void HandleEnvelope(wxMouseEvent & event);
@@ -423,11 +433,6 @@ protected:
    virtual bool CloseFunc(Track * t, wxRect rect, int x, int y);
    virtual bool PopupFunc(Track * t, wxRect rect, int x, int y);
 
-   // TrackSelFunc, unlike the other *Func methods, returns true if the click is not
-   // set up to be handled, but click is on the sync-lock icon or the blank area to
-   // the left of the minimize button, and we want to pass it forward to be a track select.
-   virtual bool TrackSelFunc(Track * t, wxRect rect, int x, int y);
-
    virtual bool MuteSoloFunc(Track *t, wxRect rect, int x, int f, bool solo);
    virtual bool MinimizeFunc(Track *t, wxRect rect, int x, int f);
    virtual bool GainFunc(Track * t, wxRect rect, wxMouseEvent &event,
@@ -436,15 +441,17 @@ protected:
                 int x, int y);
 
 
+public:
    virtual void MakeParentRedrawScrollbars();
 
+protected:
    // AS: Pushing the state preserves state for Undo operations.
    virtual void MakeParentPushState(const wxString &desc, const wxString &shortDesc); // use UndoPush::AUTOSAVE
    virtual void MakeParentPushState(const wxString &desc, const wxString &shortDesc,
                             UndoPush flags);
    virtual void MakeParentModifyState(bool bWantsAutoSave);    // if true, writes auto-save file. Should set only if you really want the state change restored after
                                                                // a crash, as it can take many seconds for large (eg. 10 track-hours) projects
-
+protected:
    virtual void OnSetName(wxCommandEvent &event);
 
    virtual void OnSetFont(wxCommandEvent &event);
@@ -483,8 +490,10 @@ protected:
    enum class CellType { Label, Track, VRuler };
    struct FoundCell {
       Track *pTrack;
+      TrackPanelCell *pCell;
       CellType type;
       wxRect rect;
+      wxRect inner;
    };
    virtual FoundCell FindCell(int mouseX, int mouseY);
 
@@ -526,6 +535,12 @@ protected:
    virtual void DrawShadow            (Track *t, wxDC* dc, const wxRect & rect);
    virtual void DrawBordersAroundTrack(Track *t, wxDC* dc, const wxRect & rect, const int labelw, const int vrul);
    virtual void DrawOutsideOfTrack    (Track *t, wxDC* dc, const wxRect & rect);
+
+public:
+   // Set the object that performs catch-all event handling when the pointer
+   // is not in any track or ruler or control panel.
+   // TrackPanel does NOT assume memory management responsibility
+   virtual void SetBackgroundCell(TrackPanelCell *pCell);
 
 protected:
    virtual int IdOfRate( int rate );
@@ -805,7 +820,13 @@ protected:
  public:
    wxSize vrulerSize;
 
- public:
+ protected:
+   Track *mpClickedTrack;
+   // TrackPanel is not responsible for memory management:
+   UIHandle *mUIHandle;
+
+   TrackPanelCell *mpBackground;
+
    DECLARE_EVENT_TABLE()
 };
 
