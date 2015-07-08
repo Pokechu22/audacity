@@ -938,6 +938,9 @@
     <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackUI.cpp">
       <Filter>src\tracks\wavetrack\ui</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\SampleHandle.cpp">
+      <Filter>src\tracks\wavetrack\ui</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\UIHandle.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -1965,6 +1968,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\widgets\PopupMenuTable.h">
       <Filter>src\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\tracks\wavetrack\ui\SampleHandle.h">
+      <Filter>src\tracks\wavetrack\ui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

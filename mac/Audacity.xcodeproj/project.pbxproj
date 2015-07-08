@@ -1239,6 +1239,7 @@
 		5EF958851DEB121800191280 /* InconsistencyException.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5EF958831DEB121800191280 /* InconsistencyException.cpp */; };
 		5E73963B1DAFD82D00BA0A4D /* PopupMenuTable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5E7396391DAFD82D00BA0A4D /* PopupMenuTable.cpp */; };
 		5E73963E1DAFD86000BA0A4D /* ZoomHandle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5E73963C1DAFD86000BA0A4D /* ZoomHandle.cpp */; };
+		5E7396411DAFD89100BA0A4D /* SampleHandle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5E73963F1DAFD89100BA0A4D /* SampleHandle.cpp */; };
 		8406A93812D0F2510011EA01 /* EQDefaultCurves.xml in Resources */ = {isa = PBXBuildFile; fileRef = 8406A93712D0F2510011EA01 /* EQDefaultCurves.xml */; };
 		8484F31413086237002DF7F0 /* DeviceManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8484F31213086237002DF7F0 /* DeviceManager.cpp */; };
 		ED15214D163C22F000451B5F /* lsr.c in Sources */ = {isa = PBXBuildFile; fileRef = ED152123163C220300451B5F /* lsr.c */; };
@@ -3074,6 +3075,8 @@
 		5E73963A1DAFD82D00BA0A4D /* PopupMenuTable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PopupMenuTable.h; sourceTree = "<group>"; };
 		5E73963C1DAFD86000BA0A4D /* ZoomHandle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ZoomHandle.cpp; sourceTree = "<group>"; };
 		5E73963D1DAFD86000BA0A4D /* ZoomHandle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZoomHandle.h; sourceTree = "<group>"; };
+		5E73963F1DAFD89100BA0A4D /* SampleHandle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SampleHandle.cpp; sourceTree = "<group>"; };
+		5E7396401DAFD89100BA0A4D /* SampleHandle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SampleHandle.h; sourceTree = "<group>"; };
 		82FF184D13CF01A600C1B664 /* dBTable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = dBTable.cpp; path = sbsms/src/dBTable.cpp; sourceTree = "<group>"; };
 		82FF184E13CF01A600C1B664 /* dBTable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dBTable.h; path = sbsms/src/dBTable.h; sourceTree = "<group>"; };
 		82FF184F13CF01A600C1B664 /* slide.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = slide.cpp; path = sbsms/src/slide.cpp; sourceTree = "<group>"; };
@@ -5707,9 +5710,11 @@
 		5E1512541DB000DC00702E29 /* ui */ = {
 			isa = PBXGroup;
 			children = (
+				5E73963F1DAFD89100BA0A4D /* SampleHandle.cpp */,
 				5E1512551DB000DC00702E29 /* WaveTrackControls.cpp */,
 				5E1512571DB000DC00702E29 /* WaveTrackUI.cpp */,
 				5E1512581DB000DC00702E29 /* WaveTrackVRulerControls.cpp */,
+				5E7396401DAFD89100BA0A4D /* SampleHandle.h */,
 				5E1512561DB000DC00702E29 /* WaveTrackControls.h */,
 				5E1512591DB000DC00702E29 /* WaveTrackVRulerControls.h */,
 			);
@@ -7828,6 +7833,7 @@
 				28D8425C1AD8D69D00551353 /* SelectedRegion.cpp in Sources */,
 				2888A1631AE25F9A00E06FDC /* Diags.cpp in Sources */,
 				2890498E1B6716B40038A543 /* SpectrogramSettings.cpp in Sources */,
+				5E7396411DAFD89100BA0A4D /* SampleHandle.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
