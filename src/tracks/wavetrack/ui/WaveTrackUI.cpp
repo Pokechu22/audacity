@@ -17,6 +17,7 @@ Paul Licameli split from TrackPanel.cpp
 #include "../../../TrackPanelMouseEvent.h"
 #include "../../../toolbars/ToolsToolBar.h"
 
+#include "../../ui/EnvelopeHandle.h"
 #include "SampleHandle.h"
 #include "../../ui/TimeShiftHandle.h"
 
@@ -38,6 +39,10 @@ HitTestResult WaveTrack::HitTest
          currentTool = slideTool;
          result = TimeShiftHandle::HitAnywhere(pProject);
       }
+      else if (NULL !=
+         (result = EnvelopeHandle::WaveTrackHitTest(event.event, event.rect, pProject, this))
+         .preview.cursor)
+         currentTool = envelopeTool;
       else if (NULL != (result =
          TimeShiftHandle::HitTest(event.event, event.rect, pProject)).preview.cursor)
          currentTool = slideTool;
