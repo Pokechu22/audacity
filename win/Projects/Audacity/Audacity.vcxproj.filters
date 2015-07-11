@@ -977,6 +977,9 @@
     <ClCompile Include="..\..\..\src\tracks\ui\CommonTrackPanelCell.cpp">
       <Filter>src\tracks\ui</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\widgets\PopupMenuTable.cpp">
+      <Filter>src\widgets</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\AboutDialog.h">
@@ -1953,6 +1956,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\blockfile\NotYetAvailableException.h">
       <Filter>src\blockfile</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\widgets\PopupMenuTable.h">
+      <Filter>src\widgets</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

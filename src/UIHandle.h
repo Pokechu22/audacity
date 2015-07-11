@@ -90,5 +90,4 @@ public:
    // does nothing.
    virtual void OnProjectChange(AudacityProject *pProject);
 };
-
 #endif

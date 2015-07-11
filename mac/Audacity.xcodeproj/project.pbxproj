@@ -1237,6 +1237,7 @@
 		5ED1D0B11CDE560C00471E3C /* BackedPanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5ED1D0AF1CDE560C00471E3C /* BackedPanel.cpp */; };
 		5EF17C231D1F0A690090A642 /* ScrubbingToolBar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5EF17C211D1F0A690090A642 /* ScrubbingToolBar.cpp */; };
 		5EF958851DEB121800191280 /* InconsistencyException.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5EF958831DEB121800191280 /* InconsistencyException.cpp */; };
+		5E73963B1DAFD82D00BA0A4D /* PopupMenuTable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5E7396391DAFD82D00BA0A4D /* PopupMenuTable.cpp */; };
 		8406A93812D0F2510011EA01 /* EQDefaultCurves.xml in Resources */ = {isa = PBXBuildFile; fileRef = 8406A93712D0F2510011EA01 /* EQDefaultCurves.xml */; };
 		8484F31413086237002DF7F0 /* DeviceManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8484F31213086237002DF7F0 /* DeviceManager.cpp */; };
 		ED15214D163C22F000451B5F /* lsr.c in Sources */ = {isa = PBXBuildFile; fileRef = ED152123163C220300451B5F /* lsr.c */; };
@@ -3068,6 +3069,8 @@
 		5EF17C221D1F0A690090A642 /* ScrubbingToolBar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ScrubbingToolBar.h; sourceTree = "<group>"; };
 		5EF958831DEB121800191280 /* InconsistencyException.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InconsistencyException.cpp; sourceTree = "<group>"; };
 		5EF958841DEB121800191280 /* InconsistencyException.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = InconsistencyException.h; sourceTree = "<group>"; };
+		5E7396391DAFD82D00BA0A4D /* PopupMenuTable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PopupMenuTable.cpp; sourceTree = "<group>"; };
+		5E73963A1DAFD82D00BA0A4D /* PopupMenuTable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PopupMenuTable.h; sourceTree = "<group>"; };
 		82FF184D13CF01A600C1B664 /* dBTable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = dBTable.cpp; path = sbsms/src/dBTable.cpp; sourceTree = "<group>"; };
 		82FF184E13CF01A600C1B664 /* dBTable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dBTable.h; path = sbsms/src/dBTable.h; sourceTree = "<group>"; };
 		82FF184F13CF01A600C1B664 /* slide.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = slide.cpp; path = sbsms/src/slide.cpp; sourceTree = "<group>"; };
@@ -4394,53 +4397,30 @@
 			isa = PBXGroup;
 			children = (
 				1790B0FE09883BFD008A330A /* AButton.cpp */,
-				1790B0FF09883BFD008A330A /* AButton.h */,
 				1790B10009883BFD008A330A /* ASlider.cpp */,
-				1790B10109883BFD008A330A /* ASlider.h */,
 				28F1D8170A2D0018005506A7 /* AttachableScrollBar.cpp */,
-				28F1D8180A2D0018005506A7 /* AttachableScrollBar.h */,
 				5ED1D0AF1CDE560C00471E3C /* BackedPanel.cpp */,
-				5ED1D0B01CDE560C00471E3C /* BackedPanel.h */,
 				283AA0E90C56ED08002CBD34 /* ErrorDialog.cpp */,
-				283AA0EA0C56ED08002CBD34 /* ErrorDialog.h */,
 				28F1D8190A2D0018005506A7 /* ExpandingToolBar.cpp */,
-				28F1D81A0A2D0018005506A7 /* ExpandingToolBar.h */,
 				28CCDCFF0F939FD70081F2FC /* FileHistory.cpp */,
-				28CCDD040F93A0B20081F2FC /* FileHistory.h */,
 				2897F6FC0AB3DCD0003C20C5 /* Grabber.cpp */,
-				2897F6FD0AB3DCD0003C20C5 /* Grabber.h */,
 				280828580A75E0EA000002EF /* Grid.cpp */,
-				280828590A75E0EA000002EF /* Grid.h */,
 				280112791943EE0E00D98A16 /* HelpSystem.cpp */,
-				2801127A1943EE0E00D98A16 /* HelpSystem.h */,
 				28530C480DF2105200555C94 /* HtmlWindow.cpp */,
-				28530C490DF2105200555C94 /* HtmlWindow.h */,
 				28F1D81B0A2D0019005506A7 /* ImageRoll.cpp */,
-				28F1D81C0A2D0019005506A7 /* ImageRoll.h */,
 				2849A41E17F8BEC2005C653F /* KeyView.cpp */,
-				2849A41F17F8BEC2005C653F /* KeyView.h */,
 				2816372C0BAE3B6C0079C746 /* LinkingHtmlWindow.cpp */,
-				2816372D0BAE3B6C0079C746 /* LinkingHtmlWindow.h */,
 				1790B10309883BFD008A330A /* Meter.cpp */,
-				1790B10409883BFD008A330A /* Meter.h */,
 				1790B10509883BFD008A330A /* MultiDialog.cpp */,
-				1790B10609883BFD008A330A /* MultiDialog.h */,
 				28001B3C1A0F0E5D007DD161 /* NumericTextCtrl.cpp */,
-				28001B3D1A0F0E5D007DD161 /* NumericTextCtrl.h */,
 				28F2CED0181867BB00573D61 /* numformatter.cpp */,
-				28F2CED1181867BB00573D61 /* numformatter.h */,
 				5ED1D0A91CDE55BD00471E3C /* Overlay.cpp */,
-				5ED1D0AA1CDE55BD00471E3C /* Overlay.h */,
 				5ED1D0AB1CDE55BD00471E3C /* OverlayPanel.cpp */,
-				5ED1D0AC1CDE55BD00471E3C /* OverlayPanel.h */,
+				5E7396391DAFD82D00BA0A4D /* PopupMenuTable.cpp */,
 				28530C4A0DF2105200555C94 /* ProgressDialog.cpp */,
-				28530C4B0DF2105200555C94 /* ProgressDialog.h */,
 				1790B10709883BFD008A330A /* Ruler.cpp */,
-				1790B10809883BFD008A330A /* Ruler.h */,
 				28F2CED2181867BB00573D61 /* valnum.cpp */,
-				28F2CED3181867BB00573D61 /* valnum.h */,
 				1790B10B09883BFD008A330A /* Warning.cpp */,
-				1790B10C09883BFD008A330A /* Warning.h */,
 				5E94A1B81D1F1C8400A8713A /* wxPanelWrapper.cpp */,
 				5E94A1B91D1F1C8400A8713A /* wxPanelWrapper.h */,
 			);
@@ -7589,6 +7569,7 @@
 				1790B18709883BFD008A330A /* QualityPrefs.cpp in Sources */,
 				1790B18809883BFD008A330A /* SpectrumPrefs.cpp in Sources */,
 				1790B18909883BFD008A330A /* Prefs.cpp in Sources */,
+				5E73963B1DAFD82D00BA0A4D /* PopupMenuTable.cpp in Sources */,
 				1790B18A09883BFD008A330A /* Printing.cpp in Sources */,
 				1790B18B09883BFD008A330A /* Project.cpp in Sources */,
 				1790B18C09883BFD008A330A /* Resample.cpp in Sources */,

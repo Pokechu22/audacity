@@ -618,6 +618,8 @@ audacity_SOURCES = \
 	widgets/Overlay.h \
 	widgets/OverlayPanel.cpp \
 	widgets/OverlayPanel.h \
+	widgets/PopupMenuTable.cpp \
+	widgets/PopupMenuTable.h \
 	widgets/ProgressDialog.cpp \
 	widgets/ProgressDialog.h \
 	widgets/Ruler.cpp \
