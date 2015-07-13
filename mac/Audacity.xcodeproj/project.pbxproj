@@ -1242,6 +1242,7 @@
 		5E7396411DAFD89100BA0A4D /* SampleHandle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5E73963F1DAFD89100BA0A4D /* SampleHandle.cpp */; };
 		5E7396441DAFD8C600BA0A4D /* TimeShiftHandle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5E7396421DAFD8C600BA0A4D /* TimeShiftHandle.cpp */; };
 		5E7396471DAFD8F200BA0A4D /* EnvelopeHandle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5E7396451DAFD8F200BA0A4D /* EnvelopeHandle.cpp */; };
+		5E73964A1DAFD91D00BA0A4D /* CutlineHandle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5E7396481DAFD91D00BA0A4D /* CutlineHandle.cpp */; };
 		8406A93812D0F2510011EA01 /* EQDefaultCurves.xml in Resources */ = {isa = PBXBuildFile; fileRef = 8406A93712D0F2510011EA01 /* EQDefaultCurves.xml */; };
 		8484F31413086237002DF7F0 /* DeviceManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8484F31213086237002DF7F0 /* DeviceManager.cpp */; };
 		ED15214D163C22F000451B5F /* lsr.c in Sources */ = {isa = PBXBuildFile; fileRef = ED152123163C220300451B5F /* lsr.c */; };
@@ -3083,6 +3084,8 @@
 		5E7396431DAFD8C600BA0A4D /* TimeShiftHandle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimeShiftHandle.h; sourceTree = "<group>"; };
 		5E7396451DAFD8F200BA0A4D /* EnvelopeHandle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = EnvelopeHandle.cpp; sourceTree = "<group>"; };
 		5E7396461DAFD8F200BA0A4D /* EnvelopeHandle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EnvelopeHandle.h; sourceTree = "<group>"; };
+		5E7396481DAFD91D00BA0A4D /* CutlineHandle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CutlineHandle.cpp; sourceTree = "<group>"; };
+		5E7396491DAFD91D00BA0A4D /* CutlineHandle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CutlineHandle.h; sourceTree = "<group>"; };
 		82FF184D13CF01A600C1B664 /* dBTable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = dBTable.cpp; path = sbsms/src/dBTable.cpp; sourceTree = "<group>"; };
 		82FF184E13CF01A600C1B664 /* dBTable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dBTable.h; path = sbsms/src/dBTable.h; sourceTree = "<group>"; };
 		82FF184F13CF01A600C1B664 /* slide.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = slide.cpp; path = sbsms/src/slide.cpp; sourceTree = "<group>"; };
@@ -5716,10 +5719,12 @@
 		5E1512541DB000DC00702E29 /* ui */ = {
 			isa = PBXGroup;
 			children = (
+				5E7396481DAFD91D00BA0A4D /* CutlineHandle.cpp */,
 				5E73963F1DAFD89100BA0A4D /* SampleHandle.cpp */,
 				5E1512551DB000DC00702E29 /* WaveTrackControls.cpp */,
 				5E1512571DB000DC00702E29 /* WaveTrackUI.cpp */,
 				5E1512581DB000DC00702E29 /* WaveTrackVRulerControls.cpp */,
+				5E7396491DAFD91D00BA0A4D /* CutlineHandle.h */,
 				5E7396401DAFD89100BA0A4D /* SampleHandle.h */,
 				5E1512561DB000DC00702E29 /* WaveTrackControls.h */,
 				5E1512591DB000DC00702E29 /* WaveTrackVRulerControls.h */,
@@ -7610,6 +7615,7 @@
 				1790B1A009883BFD008A330A /* WaveTrack.cpp in Sources */,
 				1790B1A109883BFD008A330A /* AButton.cpp in Sources */,
 				1790B1A209883BFD008A330A /* ASlider.cpp in Sources */,
+				5E73964A1DAFD91D00BA0A4D /* CutlineHandle.cpp in Sources */,
 				1790B1A309883BFD008A330A /* Meter.cpp in Sources */,
 				1790B1A409883BFD008A330A /* MultiDialog.cpp in Sources */,
 				1790B1A509883BFD008A330A /* Ruler.cpp in Sources */,
