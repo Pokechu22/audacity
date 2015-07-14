@@ -24,6 +24,9 @@ public:
 
    Track *GetTrack() const { return mpTrack; }
 
+   // Make this hack go away!  See TrackPanel::DrawOutside
+   static int gCaptureState;
+
 protected:
    HitTestResult HitTest1
       (const TrackPanelMouseEvent &event,
