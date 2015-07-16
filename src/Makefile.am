@@ -587,6 +587,8 @@ audacity_SOURCES = \
 	tracks/wavetrack/ui/CutlineHandle.h \
 	tracks/wavetrack/ui/SampleHandle.cpp \
 	tracks/wavetrack/ui/SampleHandle.h \
+	tracks/wavetrack/ui/WaveTrackButtonHandles.cpp \
+	tracks/wavetrack/ui/WaveTrackButtonHandles.h \
 	tracks/wavetrack/ui/WaveTrackControls.cpp \
 	tracks/wavetrack/ui/WaveTrackControls.h \
 	tracks/wavetrack/ui/WaveTrackVRulerControls.cpp \

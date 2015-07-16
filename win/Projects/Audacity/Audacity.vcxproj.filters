@@ -1001,6 +1001,9 @@
     <ClCompile Include="..\..\..\src\tracks\ui\SliderHandle.cpp">
       <Filter>src\tracks\ui</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackButtonHandles.cpp">
+      <Filter>src\tracks\wavetrack\ui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\AboutDialog.h">
@@ -2004,6 +2007,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\tracks\ui\SliderHandle.h">
       <Filter>src\tracks\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackButtonHandles.h">
+      <Filter>src\tracks\wavetrack\ui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

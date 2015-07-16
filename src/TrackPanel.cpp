@@ -1155,8 +1155,6 @@ void TrackPanel::HandleInterruptedDrag()
       case IsResizing:
       case IsResizingBetweenLinkedTracks:
       case IsResizingBelowLinkedTracks:
-      case IsMuting:
-      case IsSoloing:
       case IsMinimizing:
       case IsPopping:
          sendEvent = false;
@@ -3635,43 +3633,6 @@ void TrackPanel::HandlePopping(wxMouseEvent & event)
    }
 }
 
-/// Handle when the mute or solo button is pressed for some track.
-void TrackPanel::HandleMutingSoloing(wxMouseEvent & event, bool solo)
-{
-   Track *t = mCapturedTrack;
-   wxRect rect = mCapturedRect;
-
-   if( t==NULL ){
-      wxASSERT(false);// Soloing or muting but no captured track!
-      SetCapturedTrack( NULL );
-      return;
-   }
-
-   wxRect buttonRect;
-   mTrackInfo.GetMuteSoloRect(rect, buttonRect, solo, HasSoloButton());
-
-   wxClientDC dc(this);
-
-   if (event.Dragging()){
-         mTrackInfo.DrawMuteSolo(&dc, rect, t, buttonRect.Contains(event.m_x, event.m_y),
-                   solo, HasSoloButton());
-   }
-   else if (event.LeftUp() )
-   {
-      if (buttonRect.Contains(event.m_x, event.m_y))
-      {
-         // For either, MakeParentPushState to make the track state dirty.
-         if(solo)
-            GetProject()->DoTrackSolo(t, event.ShiftDown());
-         else
-            GetProject()->DoTrackMute(t, event.ShiftDown());
-      }
-      SetCapturedTrack( NULL );
-      // mTrackInfo.DrawMuteSolo(&dc, rect, t, false, solo);
-      Refresh(false);
-   }
-}
-
 void TrackPanel::HandleMinimizing(wxMouseEvent & event)
 {
    Track *t = mCapturedTrack;
@@ -3901,11 +3862,6 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
 
       if (isleft && t->GetKind() == Track::Wave)
       {
-         // DM: Check Mute and Solo buttons on WaveTracks:
-         if (MuteSoloFunc(t, rect, event.m_x, event.m_y, false) ||
-            MuteSoloFunc(t, rect, event.m_x, event.m_y, true))
-            return;
-
          if (GainFunc(t, rect, event, event.m_x, event.m_y))
             return;
 
@@ -4105,25 +4061,6 @@ bool TrackPanel::PanFunc(Track * t, wxRect rect, wxMouseEvent &event,
    mCapturedRect = rect;
    HandleSliders(event, true);
 
-   return true;
-}
-
-/// Mute or solo the given track (t).  If solo is true, we're
-/// soloing, otherwise we're muting.  Basically, check and see
-/// whether x and y fall within the  area of the appropriate button.
-bool TrackPanel::MuteSoloFunc(Track * t, wxRect rect, int x, int y,
-                              bool solo)
-{
-   wxRect buttonRect;
-   mTrackInfo.GetMuteSoloRect(rect, buttonRect, solo, HasSoloButton());
-   if (!buttonRect.Contains(x, y))
-      return false;
-
-   wxClientDC dc(this);
-   SetCapturedTrack( t, solo ? IsSoloing : IsMuting);
-   mCapturedRect = rect;
-
-   mTrackInfo.DrawMuteSolo(&dc, rect, t, true, solo, HasSoloButton());
    return true;
 }
 
@@ -5060,12 +4997,6 @@ try
       break;
    case IsPopping:
       HandlePopping(event);
-      break;
-   case IsMuting:
-      HandleMutingSoloing(event, false);
-      break;
-   case IsSoloing:
-      HandleMutingSoloing(event, true);
       break;
    case IsResizing:
    case IsResizingBetweenLinkedTracks:
@@ -7944,12 +7875,6 @@ void TrackInfo::DrawMuteSolo(wxDC * dc, const wxRect & rect, Track * t,
    dc->DrawText(str, bev.x + (bev.width - textWidth) / 2, bev.y + (bev.height - textHeight) / 2);
 
    AColor::BevelTrackInfo(*dc, (solo?t->GetSolo():t->GetMute()) == down, bev);
-
-   if (solo && !down) {
-      // Update the mute button, which may be grayed out depending on
-      // the state of the solo button.
-      DrawMuteSolo(dc, rect, t, false, false, bHasSoloButton);
-   }
 }
 
 // Draw the minimize button *and* the sync-lock track icon, if necessary.
