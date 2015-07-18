@@ -385,7 +385,6 @@ protected:
    virtual void HandleClosing(wxMouseEvent & event);
    virtual void HandlePopping(wxMouseEvent & event);
    virtual void HandleMinimizing(wxMouseEvent & event);
-   virtual void HandleSliders(wxMouseEvent &event, bool pan);
 
 
    // These *Func methods are used in TrackPanel::HandleLabelClick to set up
@@ -395,10 +394,6 @@ protected:
    virtual bool PopupFunc(Track * t, wxRect rect, int x, int y);
 
    virtual bool MinimizeFunc(Track *t, wxRect rect, int x, int f);
-   virtual bool GainFunc(Track * t, wxRect rect, wxMouseEvent &event,
-                 int x, int y);
-   virtual bool PanFunc(Track * t, wxRect rect, wxMouseEvent &event,
-                int x, int y);
 
 
 public:
@@ -678,8 +673,6 @@ public:
       IsRearranging,
       IsMuting,
       IsSoloing,
-      IsGainSliding,
-      IsPanSliding,
       IsMinimizing,
       IsPopping,
    };

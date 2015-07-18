@@ -593,6 +593,8 @@ audacity_SOURCES = \
 	tracks/wavetrack/ui/WaveTrackControls.h \
 	tracks/wavetrack/ui/WaveTrackVRulerControls.cpp \
 	tracks/wavetrack/ui/WaveTrackVRulerControls.h \
+	tracks/wavetrack/ui/WaveTrackSliderHandles.cpp \
+	tracks/wavetrack/ui/WaveTrackSliderHandles.h \
 	tracks/wavetrack/ui/WaveTrackUI.cpp \
 	widgets/AButton.cpp \
 	widgets/AButton.h \

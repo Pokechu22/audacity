@@ -28,6 +28,8 @@ protected:
    virtual Result CommitChanges
       (const wxMouseEvent &event, AudacityProject *pProject, wxWindow *pParent);
 
+   bool StopsOnKeystroke () override { return true; }
+
 public:
    static HitTestResult HitTest
       (const wxMouseEvent &event, const wxRect &rect, const AudacityProject *pProject);
@@ -47,6 +49,8 @@ class SoloButtonHandle : public ButtonHandle
 protected:
    virtual Result CommitChanges
       (const wxMouseEvent &event, AudacityProject *pProject, wxWindow *pParent);
+
+   bool StopsOnKeystroke () override { return true; }
 
 public:
    static HitTestResult HitTest

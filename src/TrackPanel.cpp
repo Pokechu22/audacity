@@ -1169,8 +1169,6 @@ void TrackPanel::HandleInterruptedDrag()
     IsClosing,
     IsAdjustingLabel,
     IsRearranging,
-    IsGainSliding,
-    IsPanSliding,
     IsStretching
     */
 
@@ -3668,99 +3666,6 @@ void TrackPanel::HandleMinimizing(wxMouseEvent & event)
    }
 }
 
-
-void TrackPanel::HandleSliders(wxMouseEvent &event, bool pan)
-{
-   LWSlider *slider;
-#ifdef EXPERIMENTAL_OUTPUT_DISPLAY
-   bool panZero = false;
-#endif
-
-   // On the Mac, we'll lose track capture if the slider dialog
-   // is displayed, but it doesn't hurt to do this for all plats.
-   WaveTrack *capturedTrack = (WaveTrack *) mCapturedTrack;
-
-   if (pan)
-      slider = mTrackInfo.PanSlider(capturedTrack, true);
-   else
-      slider = mTrackInfo.GainSlider(capturedTrack, true);
-
-   slider->OnMouseEvent(event);
-
-   //If we have a double-click, do this...
-   if (event.LeftDClick())
-      mMouseCapture = IsUncaptured;
-
-   float newValue = slider->Get();
-   MixerBoard* pMixerBoard = this->GetMixerBoard(); // Update mixer board, too.
-#ifdef EXPERIMENTAL_MIDI_OUT
-  if (capturedTrack->GetKind() == Track::Wave)
-#endif
-  {
-     const auto wt = static_cast<WaveTrack*>(capturedTrack);
-
-   // Assume linked track is wave or null
-   const auto link = static_cast<WaveTrack *>(wt->GetLink());
-
-   if (pan) {
-#ifdef EXPERIMENTAL_OUTPUT_DISPLAY
-      panZero = wt->SetPan(newValue);
-#else
-      wt->SetPan(newValue);
-#endif
-      if (link)
-         link->SetPan(newValue);
-
-#ifdef EXPERIMENTAL_OUTPUT_DISPLAY
-      if(panZero) MakeParentRedrawScrollbars();
-#endif
-
-      if (pMixerBoard)
-         pMixerBoard->UpdatePan(wt);
-   }
-   else {
-      wt->SetGain(newValue);
-      if (link)
-         link->SetGain(newValue);
-
-      if (pMixerBoard)
-         pMixerBoard->UpdateGain(wt);
-   }
-  }
-#ifdef EXPERIMENTAL_MIDI_OUT
-  else {
-     // mCapturedTrack is not wave...
-      if (!pan) {
-         // .. so assume it is note
-         static_cast<NoteTrack*>(mCapturedTrack)->SetGain(newValue);
-#ifdef EXPERIMENTAL_MIXER_BOARD
-            if (pMixerBoard)
-               // probably should modify UpdateGain to take a track that is
-               // either a WaveTrack or a NoteTrack.
-               pMixerBoard->UpdateGain((WaveTrack*)capturedTrack);
-#endif
-      }
-   }
-#endif
-
-   RefreshTrack(capturedTrack);
-
-   if (event.ButtonUp()) {
-#ifdef EXPERIMENTAL_MIDI_OUT
-    if (capturedTrack->GetKind() == Track::Wave) {
-#endif
-      MakeParentPushState(pan ? _("Moved pan slider") : _("Moved gain slider"),
-                          pan ? _("Pan") : _("Gain"),
-                          UndoPush::CONSOLIDATE);
-#ifdef EXPERIMENTAL_MIDI_OUT
-    } else {
-      MakeParentPushState(_("Moved velocity slider"), _("Velocity"), UndoPush::CONSOLIDATE);
-    }
-#endif
-      SetCapturedTrack( NULL );
-   }
-}
-
 // The tracks positions within the list have changed, so update the vertical
 // ruler size for the track that triggered the event.
 void TrackPanel::OnTrackListResized(wxCommandEvent & e)
@@ -3860,14 +3765,6 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
       if (isleft && MinimizeFunc(t, rect, event.m_x, event.m_y))
          return;
 
-      if (isleft && t->GetKind() == Track::Wave)
-      {
-         if (GainFunc(t, rect, event, event.m_x, event.m_y))
-            return;
-
-         if (PanFunc(t, rect, event, event.m_x, event.m_y))
-            return;
-      }
 #ifdef USE_MIDI
       // DM: If it's a NoteTrack, it has special controls
       else if (t->GetKind() == Track::Note)
@@ -4032,36 +3929,6 @@ void TrackPanel::CalculateRearrangingThresholds(wxMouseEvent & event)
           event.m_y + mTracks->GetGroupHeight( mTracks->GetNext(mCapturedTrack,true) );
    else
       mMoveDownThreshold = INT_MAX;
-}
-
-bool TrackPanel::GainFunc(Track * t, wxRect rect, wxMouseEvent &event,
-                          int x, int y)
-{
-   wxRect sliderRect;
-   mTrackInfo.GetGainRect(rect, sliderRect);
-   if (!sliderRect.Contains(x, y))
-      return false;
-
-   SetCapturedTrack( t, IsGainSliding);
-   mCapturedRect = rect;
-   HandleSliders(event, false);
-
-   return true;
-}
-
-bool TrackPanel::PanFunc(Track * t, wxRect rect, wxMouseEvent &event,
-                         int x, int y)
-{
-   wxRect sliderRect;
-   mTrackInfo.GetPanRect(rect, sliderRect);
-   if (!sliderRect.Contains(x, y))
-      return false;
-
-   SetCapturedTrack( t, IsPanSliding);
-   mCapturedRect = rect;
-   HandleSliders(event, true);
-
-   return true;
 }
 
 bool TrackInfo::TrackSelFunc(Track * WXUNUSED(t), wxRect rect, int x, int y)
@@ -4922,13 +4789,6 @@ try
 
    if (event.Leaving())
    {
-
-      // PRL:  was this test really needed?  It interfered with my refactoring
-      // that tried to eliminate those enum values.
-      // I think it was never true, that mouse capture was pan or gain sliding,
-      // but no mouse button was down.
-      // if (mMouseCapture != IsPanSliding && mMouseCapture != IsGainSliding)
-
       auto buttons =
          // Bug 1325: button state in Leaving events is unreliable on Mac.
          // Poll the global state instead.
@@ -5006,12 +4866,6 @@ try
       break;
    case IsRearranging:
       HandleRearrange(event);
-      break;
-   case IsGainSliding:
-      HandleSliders(event, false);
-      break;
-   case IsPanSliding:
-      HandleSliders(event, true);
       break;
    case IsMinimizing:
       HandleMinimizing(event);

@@ -998,6 +998,9 @@
     <ClCompile Include="..\..\..\src\tracks\ui\ButtonHandle.cpp">
       <Filter>src\tracks\ui</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackSliderHandles.cpp">
+      <Filter>src\tracks\wavetrack\ui</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\tracks\ui\SliderHandle.cpp">
       <Filter>src\tracks\ui</Filter>
     </ClCompile>
@@ -2004,6 +2007,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\tracks\ui\ButtonHandle.h">
       <Filter>src\tracks\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackSliderHandles.h">
+      <Filter>src\tracks\wavetrack\ui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\tracks\ui\SliderHandle.h">
       <Filter>src\tracks\ui</Filter>
