@@ -1155,7 +1155,6 @@ void TrackPanel::HandleInterruptedDrag()
       case IsResizing:
       case IsResizingBetweenLinkedTracks:
       case IsResizingBelowLinkedTracks:
-      case IsMinimizing:
       case IsPopping:
          sendEvent = false;
 
@@ -1166,7 +1165,6 @@ void TrackPanel::HandleInterruptedDrag()
    /*
     So this includes the cases:
 
-    IsClosing,
     IsAdjustingLabel,
     IsRearranging,
     IsStretching
@@ -3552,38 +3550,13 @@ void TrackPanel::HandleWaveTrackVZoom
    }
 }
 
-// This is for when a given track gets the x.
-void TrackPanel::HandleClosing(wxMouseEvent & event)
-{
-   Track *t = mCapturedTrack;
-   wxRect rect = mCapturedRect;
-
-   wxRect closeRect;
-   mTrackInfo.GetCloseBoxRect(rect, closeRect);
-
-   wxClientDC dc(this);
-
-   if (event.Dragging())
-      mTrackInfo.DrawCloseBox(&dc, rect, closeRect.Contains(event.m_x, event.m_y));
-   else if (event.LeftUp()) {
-      mTrackInfo.DrawCloseBox(&dc, rect, false);
-      if (closeRect.Contains(event.m_x, event.m_y)) {
-         AudacityProject *p = GetProject();
-         p->StopIfPaused();
-         if (!IsUnsafe())
-            GetProject()->RemoveTrack(t);
-      }
-      SetCapturedTrack( NULL );
-   }
-
-   this->UpdateViewIfNoTracks();
-   this->Refresh(false);
-}
-
 void TrackPanel::UpdateViewIfNoTracks()
 {
    if (mTracks->IsEmpty())
    {
+      // Be sure not to keep a dangling pointer
+      SetCapturedTrack(NULL);
+
       // BG: There are no more tracks on screen
       //BG: Set zoom to normal
       mViewInfo->SetZoom(ZoomInfo::GetDefaultZoom());
@@ -3597,6 +3570,7 @@ void TrackPanel::UpdateViewIfNoTracks()
       mViewInfo->h = 0;
 
       mListener->TP_RedrawScrollbars();
+      mListener->TP_HandleResize();
       mListener->TP_DisplayStatusMessage(wxT("")); //STM: Clear message if all tracks are removed
    }
 }
@@ -3628,41 +3602,6 @@ void TrackPanel::HandlePopping(wxMouseEvent & event)
       SetCapturedTrack( NULL );
 
       mTrackInfo.DrawTitleBar(&dc, rect, t, false);
-   }
-}
-
-void TrackPanel::HandleMinimizing(wxMouseEvent & event)
-{
-   Track *t = mCapturedTrack;
-   wxRect rect = mCapturedRect;
-
-   if (t == NULL) {
-      SetCapturedTrack(NULL);
-      return;
-   }
-
-   wxRect buttonRect;
-   mTrackInfo.GetMinimizeRect(rect, buttonRect);
-
-   wxClientDC dc(this);
-
-   if (event.Dragging()) {
-      mTrackInfo.DrawMinimize(&dc, rect, t, buttonRect.Contains(event.m_x, event.m_y));
-   }
-   else if (event.LeftUp()) {
-      if (buttonRect.Contains(event.m_x, event.m_y)) {
-         t->SetMinimized(!t->GetMinimized());
-         if (t->GetLink())
-            t->GetLink()->SetMinimized(t->GetMinimized());
-         MakeParentRedrawScrollbars();
-         MakeParentModifyState(true);
-      }
-
-      SetCapturedTrack(NULL);
-
-      mTrackInfo.DrawMinimize(&dc, rect, t, false);
-      Refresh(false);
-      GetActiveProject()->RedrawProject();
    }
 }
 
@@ -3745,10 +3684,6 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
    auto &t = foundCell.pTrack;
    auto &rect = foundCell.rect;
 
-   // LL: Check close box
-   if (isleft && CloseFunc(t, rect, event.m_x, event.m_y))
-      return;
-
    // LL: Check title bar for popup
    if (isleft && PopupFunc(t, rect, event.m_x, event.m_y))
       return;
@@ -3760,14 +3695,9 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
    bool bTrackSelClick = TrackInfo::TrackSelFunc(t, rect, event.m_x, event.m_y);
    if (!bTrackSelClick)
    {
-      // MM: Check minimize buttons on WaveTracks. Must be before
-      //     solo/mute buttons, sliders etc.
-      if (isleft && MinimizeFunc(t, rect, event.m_x, event.m_y))
-         return;
-
 #ifdef USE_MIDI
       // DM: If it's a NoteTrack, it has special controls
-      else if (t->GetKind() == Track::Note)
+      if (t->GetKind() == Track::Note)
       {
          wxRect midiRect;
 #ifdef EXPERIMENTAL_MIDI_OUT
@@ -3946,38 +3876,6 @@ bool TrackInfo::TrackSelFunc(Track * WXUNUSED(t), wxRect rect, int x, int y)
    GetSyncLockIconRect(rect, selRect);
    selRect.height++;
    return selRect.Contains(x, y);
-}
-
-bool TrackPanel::MinimizeFunc(Track * t, wxRect rect, int x, int y)
-{
-   wxRect buttonRect;
-   mTrackInfo.GetMinimizeRect(rect, buttonRect);
-   if (!buttonRect.Contains(x, y))
-      return false;
-
-   SetCapturedTrack(t, IsMinimizing);
-   mCapturedRect = rect;
-
-   wxClientDC dc(this);
-   mTrackInfo.DrawMinimize(&dc, rect, t, true);
-
-   return true;
-}
-
-bool TrackPanel::CloseFunc(Track * t, wxRect rect, int x, int y)
-{
-   wxRect closeRect;
-   mTrackInfo.GetCloseBoxRect(rect, closeRect);
-
-   if (!closeRect.Contains(x, y))
-      return false;
-
-   wxClientDC dc(this);
-   SetCapturedTrack( t, IsClosing );
-   mCapturedRect = rect;
-
-   mTrackInfo.DrawCloseBox(&dc, rect, true);
-   return true;
 }
 
 bool TrackPanel::PopupFunc(Track * t, wxRect rect, int x, int y)
@@ -4852,9 +4750,6 @@ try
    case IsVZooming:
       HandleVZoom(event);
       break;
-   case IsClosing:
-      HandleClosing(event);
-      break;
    case IsPopping:
       HandlePopping(event);
       break;
@@ -4866,9 +4761,6 @@ try
       break;
    case IsRearranging:
       HandleRearrange(event);
-      break;
-   case IsMinimizing:
-      HandleMinimizing(event);
       break;
    case IsAdjustingLabel:
       // Reach this case only when the captured track was label

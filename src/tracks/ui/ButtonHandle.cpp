@@ -8,7 +8,11 @@ Paul Licameli
 
 **********************************************************************/
 
+#include "../../Audacity.h"
 #include "ButtonHandle.h"
+
+#include "../../MemoryX.h"
+
 #include "../../HitTestResult.h"
 #include "../../Project.h"
 #include "../../RefreshCode.h"
@@ -29,8 +33,14 @@ ButtonHandle::~ButtonHandle()
 
 HitTestPreview ButtonHandle::Preview()
 {
-   // No special message or cursor
-   return HitTestPreview();
+   static std::unique_ptr<wxCursor> arrowCursor(
+      new wxCursor(wxCURSOR_ARROW)
+   );
+
+   return HitTestPreview(
+      wxString(),
+      &*arrowCursor
+   );
 }
 
 UIHandle::Result ButtonHandle::Click

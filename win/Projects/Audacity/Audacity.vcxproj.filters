@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="src">
@@ -1006,6 +1006,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackButtonHandles.cpp">
       <Filter>src\tracks\wavetrack\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\tracks\ui\TrackButtonHandles.cpp">
+      <Filter>src\tracks\ui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2016,6 +2019,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackButtonHandles.h">
       <Filter>src\tracks\wavetrack\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\tracks\ui\TrackButtonHandles.h">
+      <Filter>src\tracks\ui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
