@@ -8,6 +8,7 @@ Paul Licameli split from TrackPanel.cpp
 
 **********************************************************************/
 
+#include "../../Audacity.h"
 #include "TrackButtonHandles.h"
 
 #include "../../HitTestResult.h"
@@ -117,6 +118,49 @@ HitTestResult CloseButtonHandle::HitTest
    TrackInfo::GetCloseBoxRect(rect, buttonRect);
 
    if (buttonRect.Contains(event.m_x, event.m_y)) {
+      Instance().mRect = buttonRect;
+      return HitTestResult(
+         Preview(),
+         &Instance()
+      );
+   }
+   else
+      return HitTestResult();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+MenuButtonHandle::MenuButtonHandle()
+   : ButtonHandle(TrackPanel::IsPopping)
+   , mpCell(NULL)
+{
+}
+
+MenuButtonHandle::~MenuButtonHandle()
+{
+}
+
+MenuButtonHandle &MenuButtonHandle::Instance()
+{
+   static MenuButtonHandle instance;
+   return instance;
+}
+
+UIHandle::Result MenuButtonHandle::CommitChanges
+(const wxMouseEvent &, AudacityProject *, wxWindow *pParent)
+{
+   return mpCell->DoContextMenu(mRect, pParent, NULL);
+}
+
+
+HitTestResult MenuButtonHandle::HitTest
+(const wxMouseEvent &event, const wxRect &rect, TrackPanelCell *pCell)
+{
+   wxRect buttonRect;
+   TrackInfo::GetTitleBarRect(rect, buttonRect);
+
+   if (buttonRect.Contains(event.m_x, event.m_y)) {
+      Instance().mpCell = pCell;
       Instance().mRect = buttonRect;
       return HitTestResult(
          Preview(),

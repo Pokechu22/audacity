@@ -1155,7 +1155,6 @@ void TrackPanel::HandleInterruptedDrag()
       case IsResizing:
       case IsResizingBetweenLinkedTracks:
       case IsResizingBelowLinkedTracks:
-      case IsPopping:
          sendEvent = false;
 
       default:
@@ -3575,36 +3574,6 @@ void TrackPanel::UpdateViewIfNoTracks()
    }
 }
 
-void TrackPanel::HandlePopping(wxMouseEvent & event)
-{
-   Track *t = mCapturedTrack;
-   wxRect rect = mCapturedRect;
-
-   if( t==NULL ){
-      SetCapturedTrack( NULL );
-      return;
-   }
-
-   wxRect titleRect;
-   mTrackInfo.GetTitleBarRect(rect, titleRect);
-
-   wxClientDC dc(this);
-
-   if (event.Dragging()) {
-      mTrackInfo.DrawTitleBar(&dc, rect, t, titleRect.Contains(event.m_x, event.m_y));
-   }
-   else if (event.LeftUp()) {
-      if (titleRect.Contains(event.m_x, event.m_y))
-      {
-         OnTrackMenu(t);
-      }
-
-      SetCapturedTrack( NULL );
-
-      mTrackInfo.DrawTitleBar(&dc, rect, t, false);
-   }
-}
-
 // The tracks positions within the list have changed, so update the vertical
 // ruler size for the track that triggered the event.
 void TrackPanel::OnTrackListResized(wxCommandEvent & e)
@@ -3683,10 +3652,6 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
    const auto foundCell = FindCell(event.m_x, event.m_y);
    auto &t = foundCell.pTrack;
    auto &rect = foundCell.rect;
-
-   // LL: Check title bar for popup
-   if (isleft && PopupFunc(t, rect, event.m_x, event.m_y))
-      return;
 
    // VJ: Check sync-lock icon and the blank area to the left of the minimize button.
    // Have to do it here, because if track is shrunk such that these areas occlude controls,
@@ -3876,21 +3841,6 @@ bool TrackInfo::TrackSelFunc(Track * WXUNUSED(t), wxRect rect, int x, int y)
    GetSyncLockIconRect(rect, selRect);
    selRect.height++;
    return selRect.Contains(x, y);
-}
-
-bool TrackPanel::PopupFunc(Track * t, wxRect rect, int x, int y)
-{
-   wxRect titleRect;
-   mTrackInfo.GetTitleBarRect(rect, titleRect);
-   if (!titleRect.Contains(x, y))
-      return false;
-
-   wxClientDC dc(this);
-   SetCapturedTrack( t, IsPopping );
-   mCapturedRect = rect;
-
-   mTrackInfo.DrawTitleBar(&dc, rect, t, true);
-   return true;
 }
 
 ///  ButtonDown means they just clicked and haven't released yet.
@@ -4749,9 +4699,6 @@ try
    else switch( mMouseCapture ) {
    case IsVZooming:
       HandleVZoom(event);
-      break;
-   case IsPopping:
-      HandlePopping(event);
       break;
    case IsResizing:
    case IsResizingBetweenLinkedTracks:
@@ -5981,7 +5928,17 @@ void TrackPanel::OnTrackMenu(Track *t)
 
    if(!t) {
       t = GetFocusedTrack();
-      if(!t) return;
+      if(!t)
+         return;
+   }
+
+   {
+      TrackPanelCell *const pCell = t->GetTrackControl();
+      const wxRect rect(FindTrackRect(t, true));
+      const UIHandle::Result refreshResult =
+         pCell->DoContextMenu(rect, this, NULL);
+      ProcessUIHandleResult(this, mRuler, t, t, refreshResult);
+      // TODO:  Hide following lines inside the above.
    }
 
    mPopupMenuTarget = t;

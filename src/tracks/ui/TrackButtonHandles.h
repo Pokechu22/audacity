@@ -53,4 +53,30 @@ public:
    static HitTestResult HitTest(const wxMouseEvent &event, const wxRect &rect);
 };
 
+////////////////////////////////////////////////////////////////////////////////
+
+#include <wx/event.h>
+#include "../../widgets/PopupMenuTable.h"
+
+class MenuButtonHandle : public ButtonHandle
+{
+   MenuButtonHandle(const MenuButtonHandle&);
+   MenuButtonHandle &operator=(const MenuButtonHandle&);
+
+   MenuButtonHandle();
+   virtual ~MenuButtonHandle();
+   static MenuButtonHandle& Instance();
+
+protected:
+   virtual Result CommitChanges
+      (const wxMouseEvent &event, AudacityProject *pProject, wxWindow *pParent);
+
+public:
+   static HitTestResult HitTest
+      (const wxMouseEvent &event, const wxRect &rect, TrackPanelCell *pCell);
+
+private:
+   TrackPanelCell *mpCell;
+};
+
 #endif

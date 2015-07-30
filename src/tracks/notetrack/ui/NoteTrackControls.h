@@ -26,6 +26,8 @@ public:
    virtual HitTestResult HitTest
       (const TrackPanelMouseEvent &event,
        const AudacityProject *pProject);
+
+   virtual PopupMenuTable *GetMenuExtension(Track *pTrack);
 };
 
 #endif

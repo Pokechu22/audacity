@@ -33,9 +33,9 @@ struct PopupMenuTableEntry
    enum Type { Item, RadioItem, CheckItem, Separator, SubMenu, Invalid };
 
    Type type;
-   const int id;
-   const wxString caption_;
-   const wxObjectEventFunction func;
+   int id;
+   wxString caption_;
+   wxObjectEventFunction func;
    PopupMenuTable *subTable;
 
    PopupMenuTableEntry(Type type_, int id_, wxString caption__,
