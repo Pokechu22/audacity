@@ -5740,34 +5740,11 @@ void TrackPanel::OnTrackMenu(Track *t)
          return;
    }
 
-   {
-      TrackPanelCell *const pCell = t->GetTrackControl();
-      const wxRect rect(FindTrackRect(t, true));
-      const UIHandle::Result refreshResult =
-         pCell->DoContextMenu(rect, this, NULL);
-      ProcessUIHandleResult(this, mRuler, t, t, refreshResult);
-      // TODO:  Hide following lines inside the above.
-   }
-
-   mPopupMenuTarget = t;
-
-   wxMenu *theMenu = NULL;
-
-   if (theMenu) {
-      //We need to find the location of the menu rectangle.
-      wxRect rect = FindTrackRect(t,true);
-      wxRect titleRect;
-      mTrackInfo.GetTitleBarRect(rect,titleRect);
-
-      PopupMenu(theMenu, titleRect.x + 1,
-                  titleRect.y + titleRect.height + 1);
-   }
-
-   mPopupMenuTarget = NULL;
-
-   SetCapturedTrack(NULL);
-
-   Refresh(false);
+   TrackPanelCell *const pCell = t->GetTrackControl();
+   const wxRect rect(FindTrackRect(t, true));
+   const UIHandle::Result refreshResult =
+      pCell->DoContextMenu(rect, this, NULL);
+   ProcessUIHandleResult(this, mRuler, t, t, refreshResult);
 }
 
 void TrackPanel::OnVRulerMenu(Track *t, wxMouseEvent *pEvent)
