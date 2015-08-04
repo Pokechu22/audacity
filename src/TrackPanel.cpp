@@ -3010,48 +3010,6 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
    auto &t = foundCell.pTrack;
    auto &rect = foundCell.rect;
 
-   // VJ: Check sync-lock icon and the blank area to the left of the minimize button.
-   // Have to do it here, because if track is shrunk such that these areas occlude controls,
-   // e.g., mute/solo, don't want the "Funcs" below to set up handling.
-   // Only result of doing so is to select the track. Don't care whether isleft.
-   bool bTrackSelClick = TrackInfo::TrackSelFunc(t, rect, event.m_x, event.m_y);
-   if (!bTrackSelClick)
-   {
-#ifdef USE_MIDI
-      // DM: If it's a NoteTrack, it has special controls
-      if (t->GetKind() == Track::Note)
-      {
-         wxRect midiRect;
-#ifdef EXPERIMENTAL_MIDI_OUT
-         // this is an awful hack: make a NEW rectangle at an offset because
-         // MuteSoloFunc thinks buttons are located below some text, e.g.
-         // "Mono, 44100Hz 32-bit float", but this is not true for a Note track
-         wxRect muteSoloRect(rect);
-         muteSoloRect.y -= 34; // subtract the height of wave track text
-         if (MuteSoloFunc(t, muteSoloRect, event.m_x, event.m_y, false) ||
-            MuteSoloFunc(t, muteSoloRect, event.m_x, event.m_y, true))
-            return;
-
-         // this is a similar hack: GainFunc expects a Wave track slider, so it's
-         // looking in the wrong place. We pass it a bogus rectangle created when
-         // the slider was placed to "fake" GainFunc into finding the slider in
-         // its actual location.
-         if (GainFunc(t, ((NoteTrack *) t)->GetGainPlacementRect(),
-            event, event.m_x, event.m_y))
-            return;
-#endif
-         mTrackInfo.GetTrackControlsRect(rect, midiRect);
-         if (midiRect.Contains(event.m_x, event.m_y) &&
-            ((NoteTrack *)t)->LabelClick(midiRect, event.m_x, event.m_y,
-            event.Button(wxMOUSE_BTN_RIGHT))) {
-            Refresh(false);
-            return;
-         }
-      }
-#endif // USE_MIDI
-
-   }
-
    if (!isleft) {
       return;
    }
