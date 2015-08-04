@@ -26,6 +26,10 @@ public:
    virtual HitTestResult HitTest
       (const TrackPanelMouseEvent &event,
        const AudacityProject *);
+
+   virtual unsigned HandleWheelRotation
+      (const TrackPanelMouseEvent &event,
+       AudacityProject *pProject);
 };
 
 #endif
