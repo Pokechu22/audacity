@@ -150,10 +150,6 @@ class AUDACITY_DLL_API TrackPanel final : public OverlayPanel {
 
    virtual ~ TrackPanel();
 
-   virtual void BuildMenus(void);
-
-   virtual void DeleteMenus(void);
-
    virtual void UpdatePrefs();
 
    virtual void OnPaint(wxPaintEvent & event);
