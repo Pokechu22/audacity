@@ -274,16 +274,19 @@ class AUDACITY_DLL_API TrackPanel final : public OverlayPanel {
 #endif
 
    // AS: Selection handling
+
+public:
    void SelectTrack(Track *track, bool selected, bool updateLastPicked = true);
    void SelectRangeOfTracks(Track *sTrack, Track *eTrack);
-   size_t GetTrackCount();
-   size_t GetSelectedTrackCount();
+   size_t GetTrackCount() const;
+   size_t GetSelectedTrackCount() const;
+
+protected:
+   virtual void ChangeSelectionOnShiftClick(Track * pTrack);
+
    virtual void HandleSelect(wxMouseEvent & event);
    virtual void SelectionHandleDrag(wxMouseEvent &event, Track *pTrack);
 
-protected:
-
-   virtual void ChangeSelectionOnShiftClick(Track * pTrack);
    virtual void SelectionHandleClick(wxMouseEvent &event,
                                      Track* pTrack, wxRect rect);
    virtual void StartSelection (int mouseXCoordinate, int trackLeftEdge);
@@ -312,11 +315,13 @@ protected:
 #endif
 
    virtual void SelectTracksByLabel( LabelTrack *t );
+
+public:
    virtual void SelectTrackLength(Track *t);
 
+protected:
    // AS: Cursor handling
    virtual bool SetCursorByActivity( );
-   virtual void SetCursorAndTipWhenInLabel( Track * t, const wxMouseEvent &event, wxString &tip );
    virtual void SetCursorAndTipWhenInVResizeArea( bool blinked, wxString &tip );
    virtual void SetCursorAndTipWhenInLabelTrack( LabelTrack * pLT, const wxMouseEvent & event, wxString &tip );
    virtual void SetCursorAndTipWhenSelectTool
@@ -340,15 +345,9 @@ protected:
    virtual void HandleResizeButtonUp(wxMouseEvent & event);
    virtual void HandleResize(wxMouseEvent & event);
 
-   virtual void HandleLabelClick(wxMouseEvent & event);
-
 public:
    virtual void HandleListSelection(Track *t, bool shift, bool ctrl,
                                     bool modifyState = true);
-
-protected:
-   virtual void HandleRearrange(wxMouseEvent & event);
-   virtual void CalculateRearrangingThresholds(wxMouseEvent & event);
 
 public:
    virtual void MakeParentRedrawScrollbars();
@@ -382,7 +381,8 @@ protected:
 // JKC Nov-2011: These four functions only used from within a dll such as mod-track-panel
 // They work around some messy problems with constructors.
 public:
-   TrackList * GetTracks(){ return mTracks.get(); }
+   const TrackList * GetTracks() const { return mTracks.get(); }
+   TrackList * GetTracks() { return mTracks.get(); }
    ViewInfo * GetViewInfo(){ return mViewInfo;}
    TrackPanelListener * GetListener(){ return mListener;}
    AdornedRulerPanel * GetRuler(){ return mRuler;}
@@ -581,7 +581,6 @@ public:
       IsResizing,
       IsResizingBetweenLinkedTracks,
       IsResizingBelowLinkedTracks,
-      IsRearranging,
       IsMuting,
       IsSoloing,
       IsMinimizing,
@@ -597,17 +596,10 @@ public:
 protected:
    bool mCircularTrackNavigation;
 
-   // JH: if the user is dragging a track, at what y
-   //   coordinate should the dragging track move up or down?
-   int mMoveUpThreshold;
-   int mMoveDownThreshold;
-   int mRearrangeCount;
-
    std::unique_ptr<wxCursor>
       mArrowCursor, mSelectCursor,
       mResizeCursor, mEnvelopeCursor, // doubles as the center frequency cursor
                               // for spectral selection
-      mRearrangeCursor,
       mDisabledCursor, mAdjustLeftSelectionCursor, mAdjustRightSelectionCursor;
 #ifdef EXPERIMENTAL_SPECTRAL_EDITING
    std::unique_ptr<wxCursor>
