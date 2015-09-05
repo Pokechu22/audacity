@@ -750,8 +750,6 @@ void TrackPanel::UpdatePrefs()
 {
    gPrefs->Read(wxT("/GUI/AutoScroll"), &mViewInfo->bUpdateTrackIndicator,
       true);
-   gPrefs->Read(wxT("/GUI/AdjustSelectionEdges"), &mAdjustSelectionEdges,
-      true);
    gPrefs->Read(wxT("/GUI/CircularTrackNavigation"), &mCircularTrackNavigation,
       false);
    gPrefs->Read(wxT("/GUI/Solo"), &mSoloPref, wxT("Simple"));
@@ -1580,7 +1578,7 @@ void TrackPanel::SetCursorAndTipWhenSelectTool( Track * t,
    //Make sure we are within the selected track
    // Adjusting the selection edges can be turned off in
    // the preferences...
-   if ( !t->GetSelected() || !mAdjustSelectionEdges)
+   if ( !t->GetSelected() || !mViewInfo->bAdjustSelectionEdges)
    {
       MaySetOnDemandTip( t, tip );
       return;
@@ -2149,7 +2147,7 @@ void TrackPanel::SelectionHandleClick(wxMouseEvent & event,
    if (pTrack && pTrack->GetSelected()) {
       // Adjusting selection edges can be turned off in the
       // preferences now
-      if (mAdjustSelectionEdges) {
+      if (mViewInfo->bAdjustSelectionEdges) {
 #ifdef EXPERIMENTAL_SPECTRAL_EDITING
          if (mFreqSelMode == FREQ_SEL_SNAPPING_CENTER &&
             isSpectralSelectionTrack(pTrack)) {
@@ -2214,7 +2212,7 @@ void TrackPanel::SelectionHandleClick(wxMouseEvent & event,
                wxASSERT(false);
             }
          }
-      } // mAdjustSelectionEdges
+      } // mViewInfo->bAdjustSelectionEdges
    }
 
 #ifdef USE_MIDI
