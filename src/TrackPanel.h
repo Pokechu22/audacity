@@ -631,18 +631,6 @@ protected:
    wxRect mCapturedTrackLocationRect;
    wxRect mCapturedRect;
 
-   // When sliding horizontally, the moving clip may automatically
-   // snap to the beginning and ending of other clips, or to label
-   // starts and stops.  When you start sliding, SlideSnapFromPoints
-   // gets populated with the start and stop times of selected clips,
-   // and SlideSnapToPoints gets populated with the start and stop times
-   // of other clips.  In both cases, times that are within 3 pixels
-   // of another at the same zoom level are eliminated; you can't snap
-   // when there are two things arbitrarily close at that zoom level.
-   wxBaseArrayDouble mSlideSnapFromPoints;
-   wxBaseArrayDouble mSlideSnapToPoints;
-   wxArrayInt mSlideSnapLinePixels;
-
    // The amount that clips are sliding horizontally; this allows
    // us to undo the slide and then slide it by another amount
    double mHSlideAmount;
@@ -670,8 +658,6 @@ protected:
    wxInt64 mSnapLeft;
    wxInt64 mSnapRight;
    bool mSnapPreferRightEdge;
-
-   NumericConverter mConverter;
 
    WaveTrack * mDrawingTrack;          // Keeps track of which track you are drawing on between events cf. HandleDraw()
    int mDrawingTrackTop;           // Keeps track of the top position of the drawing track.
@@ -743,9 +729,6 @@ protected:
       IsMinimizing,
       WasOverCutLine,
       IsPopping,
-#ifdef USE_MIDI
-      IsStretching,
-#endif
       IsZooming,
 
    };
@@ -768,7 +751,7 @@ protected:
       mResizeCursor, mSlideCursor, mEnvelopeCursor, // doubles as the center frequency cursor
                               // for spectral selection
       mSmoothCursor, mZoomInCursor, mZoomOutCursor,
-      mLabelCursorLeft, mLabelCursorRight, mRearrangeCursor,
+      mRearrangeCursor,
       mDisabledCursor, mAdjustLeftSelectionCursor, mAdjustRightSelectionCursor;
 #ifdef EXPERIMENTAL_SPECTRAL_EDITING
    std::unique_ptr<wxCursor>
