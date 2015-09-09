@@ -232,6 +232,7 @@
     <ClCompile Include="..\..\..\src\tracks\timetrack\ui\TimeTrackControls.cpp" />
     <ClCompile Include="..\..\..\src\tracks\timetrack\ui\TimeTrackUI.cpp" />
     <ClCompile Include="..\..\..\src\tracks\timetrack\ui\TimeTrackVRulerControls.cpp" />
+    <ClCompile Include="..\..\..\src\tracks\ui\BackgroundCell.cpp" />
     <ClCompile Include="..\..\..\src\tracks\ui\ButtonHandle.cpp" />
     <ClCompile Include="..\..\..\src\tracks\ui\CommonTrackPanelCell.cpp" />
     <ClCompile Include="..\..\..\src\tracks\ui\EditCursorOverlay.cpp" />
@@ -494,6 +495,7 @@
     <ClInclude Include="..\..\..\src\TrackPanelCellIterator.h" />
     <ClInclude Include="..\..\..\src\TrackPanelListener.h" />
     <ClInclude Include="..\..\..\src\TrackPanelMouseEvent.h" />
+    <ClInclude Include="..\..\..\src\tracks\ui\BackgroundCell.h" />
     <ClInclude Include="..\..\..\src\tracks\ui\CommonTrackPanelCell.h" />
     <ClInclude Include="..\..\..\src\tracks\labeltrack\ui\LabelTrackControls.h" />
     <ClInclude Include="..\..\..\src\tracks\labeltrack\ui\LabelTrackVRulerControls.h" />

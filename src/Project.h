@@ -100,6 +100,7 @@ class UndoManager;
 enum class UndoPush : unsigned char;
 
 class Track;
+class BackgroundCell;
 
 AudacityProject *CreateNewAudacityProject();
 AUDACITY_DLL_API AudacityProject *GetActiveProject();
@@ -754,6 +755,8 @@ private:
    // TrackPanelOverlay objects
    std::unique_ptr<Overlay>
       mIndicatorOverlay, mCursorOverlay;
+
+   std::unique_ptr<BackgroundCell> mBackgroundCell;
 
 #ifdef EXPERIMENTAL_SCRUBBING_BASIC
    std::unique_ptr<Overlay> mScrubOverlay;
