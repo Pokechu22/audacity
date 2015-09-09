@@ -52,6 +52,7 @@
 #include "../AllThemeResources.h"
 #include "../ImageManipulation.h"
 #include "../Project.h"
+#include "../tracks/ui/Scrubbing.h"
 #include "../Theme.h"
 
 #include "../Experimental.h"
@@ -279,7 +280,11 @@ const wxChar * ToolsToolBar::GetMessageForTool( int ToolNumber ) const
    wxASSERT( ToolNumber >= 0 );
    wxASSERT( ToolNumber < numTools );
 
-   return mMessageOfTool[ToolNumber];
+   auto tip = ::GetActiveProject()->GetScrubber().StatusMessageForWave();
+   if( tip.IsEmpty() )
+      return mMessageOfTool[ToolNumber];
+   else
+      return tip;
 }
 
 

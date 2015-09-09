@@ -154,14 +154,12 @@ is time to refresh some aspect of the screen.
 #include "Audacity.h"
 #include "Experimental.h"
 #include "TrackPanel.h"
+#include "Project.h"
 #include "TrackPanelCell.h"
 #include "TrackPanelCellIterator.h"
 #include "TrackPanelMouseEvent.h"
 #include "TrackPanelResizeHandle.h"
 //#define DEBUG_DRAW_TIMING 1
-// #define SPECTRAL_EDITING_ESC_KEY
-
-#include "FreqWindow.h" // for SpectrumAnalyst
 
 #include "AColor.h"
 #include "AllThemeResources.h"
@@ -169,11 +167,8 @@ is time to refresh some aspect of the screen.
 #include "float_cast.h"
 #include "MixerBoard.h"
 
-#include "NoteTrack.h"
-#include "NumberScale.h"
 #include "Prefs.h"
 #include "RefreshCode.h"
-#include "Snap.h"
 #include "TrackArtist.h"
 #include "TrackPanelAx.h"
 #include "UndoManager.h"
@@ -181,22 +176,15 @@ is time to refresh some aspect of the screen.
 #include "HitTestResult.h"
 #include "WaveTrack.h"
 
-#include "commands/Keyboard.h"
-
-#include "ondemand/ODManager.h"
-
-#include "prefs/SpectrogramSettings.h"
-
 #include "toolbars/ControlToolBar.h"
 #include "toolbars/ToolsToolBar.h"
-
-// To do:  eliminate this!
-#include "tracks/ui/Scrubbing.h"
 
 //This loads the appropriate set of cursors, depending on platform.
 #include "../images/Cursors.h"
 
 #include "widgets/ASlider.h"
+#include "widgets/Ruler.h"
+#include <algorithm>
 
 DEFINE_EVENT_TYPE(EVT_TRACK_PANEL_TIMER)
 
@@ -260,20 +248,6 @@ template < class A, class B, class DIST > bool within(A a, B b, DIST d)
    return (a > b - d) && (a < b + d);
 }
 
-template < class CLIPPEE, class CLIPVAL >
-    void clip_top(CLIPPEE & clippee, CLIPVAL val)
-{
-   if (clippee > val)
-      clippee = val;
-}
-
-template < class CLIPPEE, class CLIPVAL >
-    void clip_bottom(CLIPPEE & clippee, CLIPVAL val)
-{
-   if (clippee < val)
-      clippee = val;
-}
-
 BEGIN_EVENT_TABLE(TrackPanel, OverlayPanel)
     EVT_MOUSE_EVENTS(TrackPanel::OnMouseEvent)
     EVT_MOUSE_CAPTURE_LOST(TrackPanel::OnCaptureLost)
@@ -329,7 +303,6 @@ TrackPanel::TrackPanel(wxWindow * parent, wxWindowID id,
      mRuler(ruler),
      mTrackArtist(nullptr),
      mRefreshBacking(false),
-     mAutoScrolling(false),
      vrulerSize(36,0)
      , mpClickedTrack(NULL)
      , mUIHandle(NULL)
@@ -353,45 +326,13 @@ TrackPanel::TrackPanel(wxWindow * parent, wxWindowID id,
 #endif
    }
 
-   mMouseCapture = IsUncaptured;
    mCircularTrackNavigation = false;
 
 
    mRedrawAfterStop = false;
 
-   mSelectCursor  = MakeCursor( wxCURSOR_IBEAM,     IBeamCursorXpm,   17, 16);
-   mEnvelopeCursor= MakeCursor( wxCURSOR_ARROW,     EnvCursorXpm,     16, 16);
-   mDisabledCursor= MakeCursor( wxCURSOR_NO_ENTRY,  DisabledCursorXpm,16, 16);
-   
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-   mBottomFrequencyCursor =
-      MakeCursor( wxCURSOR_ARROW,  BottomFrequencyCursorXpm, 16, 16);
-   mTopFrequencyCursor =
-      MakeCursor( wxCURSOR_ARROW,  TopFrequencyCursorXpm, 16, 16);
-   mBandWidthCursor = MakeCursor( wxCURSOR_ARROW,  BandWidthCursorXpm, 16, 16);
-#endif
-
-#if USE_MIDI
-   mStretchMode = stretchCenter;
-   mStretching = false;
-   mStretched = false;
-   mStretchStart = 0;
-   mStretchCursor = MakeCursor( wxCURSOR_BULLSEYE,  StretchCursorXpm, 16, 16);
-   mStretchLeftCursor = MakeCursor( wxCURSOR_BULLSEYE,
-                                    StretchLeftCursorXpm, 16, 16);
-   mStretchRightCursor = MakeCursor( wxCURSOR_BULLSEYE,
-                                     StretchRightCursorXpm, 16, 16);
-#endif
-
-   mArrowCursor = std::make_unique<wxCursor>(wxCURSOR_ARROW);
-   mAdjustLeftSelectionCursor = std::make_unique<wxCursor>(wxCURSOR_POINT_LEFT);
-   mAdjustRightSelectionCursor = std::make_unique<wxCursor>(wxCURSOR_POINT_RIGHT);
-
    mTrackArtist = std::make_unique<TrackArtist>();
-
    mTrackArtist->SetInset(1, kTopMargin, kRightMargin, kBottomMargin);
-
-   mCapturedTrack = NULL;
 
    mTimeCount = 0;
    mTimer.parent = this;
@@ -402,12 +343,6 @@ TrackPanel::TrackPanel(wxWindow * parent, wxWindowID id,
    //to prevent runtime memory check warnings
    mPrevWidth = -1;
    mPrevHeight = -1;
-
-   // This is used to snap the cursor to the nearest track that
-   // lines up with it.
-   mSnapManager = NULL;
-   mSnapLeft = -1;
-   mSnapRight = -1;
 
    // Register for tracklist updates
    mTracks->Connect(EVT_TRACKLIST_RESIZED,
@@ -420,14 +355,8 @@ TrackPanel::TrackPanel(wxWindow * parent, wxWindowID id,
                     this);
 
 #ifdef EXPERIMENTAL_SPECTRAL_EDITING
-   mFreqSelMode = FREQ_SEL_INVALID;
-   mFrequencySnapper = std::make_unique<SpectrumAnalyst>();
-
    mLastF0 = mLastF1 = SelectedRegion::UndefinedFrequency;
 #endif
-
-   mSelStartValid = false;
-   mSelStart = 0;
 }
 
 
@@ -508,23 +437,6 @@ void TrackPanel::UpdatePrefs()
    mTrackInfo.UpdatePrefs();
 
    Refresh();
-}
-
-/// Remembers the track we clicked on and why we captured it.
-/// We also use this method to clear the record
-/// of the captured track, passing NULL as the track.
-void TrackPanel::SetCapturedTrack( Track * t, enum MouseCaptureEnum MouseCapture )
-{
-#if defined(__WXDEBUG__)
-   if (t == NULL) {
-      wxASSERT(MouseCapture == IsUncaptured);
-   }
-   else {
-      wxASSERT(MouseCapture != IsUncaptured);
-   }
-#endif
-   mCapturedTrack = t;
-   mMouseCapture = MouseCapture;
 }
 
 void TrackPanel::SelectNone()
@@ -644,11 +556,6 @@ void TrackPanel::OnTimer(wxTimerEvent& )
 #endif
 
    mTimeCount++;
-   // AS: If the user is dragging the mouse and there is a track that
-   //  has captured the mouse, then scroll the screen, as necessary.
-   if ((mMouseCapture==IsSelecting) && mCapturedTrack) {
-      ScrollDuringDrag();
-   }
 
    AudacityProject *const p = GetProject();
 
@@ -710,63 +617,6 @@ void TrackPanel::OnTimer(wxTimerEvent& )
       mTimeCount = 0;
 }
 
-///  We check on each timer tick to see if we need to scroll.
-///  Scrolling is handled by mListener, which is an interface
-///  to the window TrackPanel is embedded in.
-void TrackPanel::ScrollDuringDrag()
-{
-   // DM: If we're "autoscrolling" (which means that we're scrolling
-   //  because the user dragged from inside to outside the window,
-   //  not because the user clicked in the scroll bar), then
-   //  the selection code needs to be handled slightly differently.
-   //  We set this flag ("mAutoScrolling") to tell the selecting
-   //  code that we didn't get here as a result of a mouse event,
-   //  and therefore it should ignore the mouseEvent parameter,
-   //  and instead use the last known mouse position.  Setting
-   //  this flag also causes the Mac to redraw immediately rather
-   //  than waiting for the next update event; this makes scrolling
-   //  smoother on MacOS 9.
-
-   if (mMouseMostRecentX >= mCapturedRect.x + mCapturedRect.width) {
-      mAutoScrolling = true;
-      mListener->TP_ScrollRight();
-   }
-   else if (mMouseMostRecentX < mCapturedRect.x) {
-      mAutoScrolling = true;
-      mListener->TP_ScrollLeft();
-   }
-   else {
-      // Bug1387:  enable autoscroll during drag, if the pointer is at either extreme x
-      // coordinate of the screen, even if that is still within the track area.
-
-      int xx = mMouseMostRecentX, yy = 0;
-      this->ClientToScreen(&xx, &yy);
-      if (xx == 0) {
-         mAutoScrolling = true;
-         mListener->TP_ScrollLeft();
-      }
-      else {
-         int width, height;
-         ::wxDisplaySize(&width, &height);
-         if (xx == width - 1) {
-            mAutoScrolling = true;
-            mListener->TP_ScrollRight();
-         }
-      }
-   }
-
-   if (mAutoScrolling) {
-      // AS: To keep the selection working properly as we scroll,
-      //  we fake a mouse event (remember, this method is called
-      //  from a timer tick).
-
-      // AS: For some reason, GCC won't let us pass this directly.
-      wxMouseEvent e(wxEVT_MOTION);
-      HandleSelect(e);
-      mAutoScrolling = false;
-   }
-}
-
 double TrackPanel::GetScreenEndTime() const
 {
    int width;
@@ -826,19 +676,6 @@ void TrackPanel::OnPaint(wxPaintEvent & /* event */)
 #endif
 }
 
-/// Makes our Parent (well, whoever is listening to us) push their state.
-/// this causes application state to be preserved on a stack for undo ops.
-void TrackPanel::MakeParentPushState(const wxString &desc, const wxString &shortDesc,
-                                     UndoPush flags)
-{
-   mListener->TP_PushState(desc, shortDesc, flags);
-}
-
-void TrackPanel::MakeParentPushState(const wxString &desc, const wxString &shortDesc)
-{
-   MakeParentPushState(desc, shortDesc, UndoPush::AUTOSAVE);
-}
-
 void TrackPanel::MakeParentModifyState(bool bWantsAutoSave)
 {
    mListener->TP_ModifyState(bWantsAutoSave);
@@ -855,24 +692,6 @@ void TrackPanel::HandleInterruptedDrag()
 
    if (mUIHandle)
       sendEvent = mUIHandle->StopsOnKeystroke();
-   // Certain drags need to complete their effects before handling keystroke shortcut
-   // commands:  those that have undoable editing effects.  For others, keystrokes are
-   // harmless and we do nothing.
-   else switch (mMouseCapture)
-   {
-      case IsUncaptured:
-      case IsSelecting:
-         sendEvent = false;
-
-      default:
-         ;
-   }
-
-   /*
-    So this includes the cases:
-
-    IsStretching
-    */
 
    if (sendEvent) {
       // The bogus id isn't used anywhere, but may help with debugging.
@@ -985,42 +804,16 @@ bool TrackPanel::HandleEscapeKey(bool down)
    if (!down)
       return false;
 
-   switch (mMouseCapture)
-   {
-   case IsSelecting:
-   {
-      TrackListIterator iter(GetTracks());
-      std::vector<bool>::const_iterator
-         it = mInitialTrackSelection.begin(),
-         end = mInitialTrackSelection.end();
-      for (Track *t = iter.First(); t; t = iter.Next()) {
-         wxASSERT(it != end);
-         t->SetSelected(*it++);
-      }
-      mLastPickedTrack = mInitialLastPickedTrack;
-      mViewInfo->selectedRegion = mInitialSelection;
+   mLastPickedTrack = mInitialLastPickedTrack;
 
-      // Refresh mixer board for change of set of selected tracks
-      if (MixerBoard* pMixerBoard = this->GetMixerBoard())
-         pMixerBoard->Refresh();
+   if (mUIHandle) {
+      // UIHANDLE CANCEL
+      CancelDragging();
+      return true;
    }
-      break;
-   default:
-   {
-      // Not escaping from a mouse drag
-      return false;
-   }
-   }
-
-   // Common part in all cases that escape from a drag
-   SetCapturedTrack(NULL, IsUncaptured);
-   if (HasCapture())
-      ReleaseMouse();
-   wxMouseEvent dummy;
-   HandleCursor(dummy);
-   Refresh(false);
-
-   return true;
+   
+   // Not escaping from a mouse drag
+   return false;
 }
 
 void TrackPanel::HandleAltKey(bool down)
@@ -1063,267 +856,12 @@ MixerBoard* TrackPanel::GetMixerBoard()
    return p->GetMixerBoard();
 }
 
-/// Used to determine whether it is safe or not to perform certain
-/// edits at the moment.
-/// @return true if audio is being recorded or is playing.
-bool TrackPanel::IsUnsafe()
-{
-   return IsAudioActive();
-}
-
 bool TrackPanel::IsAudioActive()
 {
    AudacityProject *p = GetProject();
    return p->IsAudioActive();
 }
 
-
-/// Uses a previously noted 'activity' to determine what
-/// cursor to use.
-/// @var mMouseCapture holds the current activity.
-bool TrackPanel::SetCursorByActivity( )
-{
-   bool unsafe = IsUnsafe();
-
-   switch( mMouseCapture )
-   {
-   case IsSelecting:
-      SetCursor(*mSelectCursor);
-      return true;
-#if 0
-   case IsStretching:
-      SetCursor( unsafe ? *mDisabledCursor : *mStretchCursor);
-      return true;
-#endif
-   default:
-      break;
-   }
-   return false;
-}
-
-namespace {
-
-// This returns true if we're a spectral editing track.
-inline bool isSpectralSelectionTrack(const Track *pTrack) {
-   if (pTrack &&
-       pTrack->GetKind() == Track::Wave) {
-      const WaveTrack *const wt = static_cast<const WaveTrack*>(pTrack);
-      const SpectrogramSettings &settings = wt->GetSpectrogramSettings();
-      const int display = wt->GetDisplay();
-      return (display == WaveTrack::Spectrum) && settings.SpectralSelectionEnabled();
-   }
-   else {
-      return false;
-   }
-}
-
-} // namespace
-
-// If we're in OnDemand mode, we may change the tip.
-void TrackPanel::MaySetOnDemandTip( Track * t, wxString &tip )
-{
-   wxASSERT( t );
-   //For OD regions, we need to override and display the percent complete for this task.
-   //first, make sure it's a wavetrack.
-   if(t->GetKind() != Track::Wave)
-      return;
-   //see if the wavetrack exists in the ODManager (if the ODManager exists)
-   if(!ODManager::IsInstanceCreated())
-      return;
-   //ask the wavetrack for the corresponding tip - it may not change tip, but that's fine.
-   ODManager::Instance()->FillTipForWaveTrack(static_cast<WaveTrack*>(t), tip);
-   return;
-}
-
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-void TrackPanel::HandleCenterFrequencyCursor
-(bool shiftDown, wxString &tip, const wxCursor ** ppCursor)
-{
-#ifndef SPECTRAL_EDITING_ESC_KEY
-   tip =
-      shiftDown ?
-      _("Click and drag to move center selection frequency.") :
-      _("Click and drag to move center selection frequency to a spectral peak.");
-
-#else
-   shiftDown;
-
-   tip =
-      _("Click and drag to move center selection frequency.");
-
-#endif
-
-   *ppCursor = mEnvelopeCursor.get();
-}
-
-void TrackPanel::HandleCenterFrequencyClick
-(bool shiftDown, const WaveTrack *wt, double value)
-{
-   if (shiftDown) {
-      // Disable time selection
-      mSelStartValid = false;
-      mFreqSelTrack = wt;
-      mFreqSelPin = value;
-      mFreqSelMode = FREQ_SEL_DRAG_CENTER;
-   }
-   else {
-#ifndef SPECTRAL_EDITING_ESC_KEY
-      // Start center snapping
-      // Turn center snapping on (the only way to do this)
-      mFreqSelMode = FREQ_SEL_SNAPPING_CENTER;
-      // Disable time selection
-      mSelStartValid = false;
-      StartSnappingFreqSelection(wt);
-#endif
-   }
-}
-#endif
-
-// The select tool can have different cursors and prompts depending on what
-// we hover over, most notably when hovering over the selction boundaries.
-// Determine and set the cursor and tip accordingly.
-void TrackPanel::SetCursorAndTipWhenSelectTool( Track * t,
-        const wxMouseEvent & event, const wxRect &rect, bool bMultiToolMode,
-        wxString &tip, const wxCursor ** ppCursor )
-{
-   // Do not set the default cursor here and re-set later, that causes
-   // flashing.
-   *ppCursor = mSelectCursor.get();
-
-   //In Multi-tool mode, give multitool prompt if no-special-hit.
-   if( bMultiToolMode ) {
-      // Look up the current key binding for Preferences.
-      // (Don't assume it's the default!)
-      wxString keyStr
-         (GetProject()->GetCommandManager()->GetKeyFromName(wxT("Preferences")));
-      if (keyStr.IsEmpty())
-         // No keyboard preference defined for opening Preferences dialog
-         /* i18n-hint: These are the names of a menu and a command in that menu */
-         keyStr = _("Edit, Preferences...");
-      else
-         keyStr = KeyStringDisplay(keyStr);
-      /* i18n-hint: %s is usually replaced by "Ctrl+P" for Windows/Linux, "Command+," for Mac */
-      tip = wxString::Format(
-         _("Multi-Tool Mode: %s for Mouse and Keyboard Preferences."),
-         keyStr.c_str());
-      // Later in this function we may point to some other string instead.
-   }
-
-   // Not over a track?  Get out of here.
-   if(!t)
-      return;
-
-   //Make sure we are within the selected track
-   // Adjusting the selection edges can be turned off in
-   // the preferences...
-   if ( !t->GetSelected() || !mViewInfo->bAdjustSelectionEdges)
-   {
-      MaySetOnDemandTip( t, tip );
-      return;
-   }
-
-   {
-      wxInt64 leftSel = mViewInfo->TimeToPosition(mViewInfo->selectedRegion.t0(), rect.x);
-      wxInt64 rightSel = mViewInfo->TimeToPosition(mViewInfo->selectedRegion.t1(), rect.x);
-      // Something is wrong if right edge comes before left edge
-      wxASSERT(!(rightSel < leftSel));
-   }
-
-   const bool bShiftDown = event.ShiftDown();
-   const bool bCtrlDown = event.ControlDown();
-   const bool bModifierDown = bShiftDown || bCtrlDown;
-
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-   if ( (mFreqSelMode == FREQ_SEL_SNAPPING_CENTER) &&
-      isSpectralSelectionTrack(t)) {
-      // Not shift-down, but center frequency snapping toggle is on
-      tip = _("Click and drag to set frequency bandwidth.");
-      *ppCursor = mEnvelopeCursor.get();
-      return;
-   }
-#endif
-
-   // If not shift-down and not snapping center, then
-   // choose boundaries only in snapping tolerance,
-   // and may choose center.
-   SelectionBoundary boundary =
-        ChooseBoundary(event, t, rect, !bModifierDown, !bModifierDown);
-
-#ifdef USE_MIDI
-   // The MIDI HitTest will only succeed if we are on a midi track, so 
-   // typically we will fall through.
-   switch( boundary) {
-      case SBNone:
-      case SBLeft:
-      case SBRight:
-         if ( HitTestStretch(t, rect, event)) {
-            tip = _("Click and drag to stretch within selected region.");
-            *ppCursor = mStretchCursor.get();
-            return;
-         }
-         break;
-      default:
-         break;
-   }
-#endif
-
-   switch (boundary) {
-      case SBNone:
-         if( bShiftDown ){
-            // wxASSERT( false );
-            // Same message is used for moving left right top or bottom edge.
-            tip = _("Click to move selection boundary to cursor.");
-            // No cursor change.
-            return;
-         }
-         break;
-      case SBLeft:
-         tip = _("Click and drag to move left selection boundary.");
-         *ppCursor = mAdjustLeftSelectionCursor.get();
-         return;
-      case SBRight:
-         tip = _("Click and drag to move right selection boundary.");
-         *ppCursor = mAdjustRightSelectionCursor.get();
-         return;
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-      case SBBottom:
-         tip = _("Click and drag to move bottom selection frequency.");
-         *ppCursor = mBottomFrequencyCursor.get();
-         return;
-      case SBTop:
-         tip = _("Click and drag to move top selection frequency.");
-         *ppCursor = mTopFrequencyCursor.get();
-         return;
-      case SBCenter:
-         HandleCenterFrequencyCursor(bShiftDown, tip, ppCursor);
-         return;
-      case SBWidth:
-         tip = _("Click and drag to adjust frequency bandwidth.");
-         *ppCursor = mBandWidthCursor.get();
-         return;
-#endif
-      default:
-         wxASSERT(false);
-   } // switch
-   // Falls through the switch if there was no boundary found.
-
-   MaySetOnDemandTip( t, tip );
-}
-
-/// In this method we know what tool we are using,
-/// so set the cursor accordingly.
-void TrackPanel::SetCursorAndTipByTool( int tool,
-         const wxMouseEvent &, wxString& )
-{
-   // Change the cursor based on the active tool.
-   switch (tool) {
-   case selectTool:
-      wxFAIL;// should have already been handled
-      break;
-   }
-   // doesn't actually change the tip itself, but it could (should?) do at some
-   // future date.
-}
 
 ///  TrackPanel::HandleCursor( ) sets the cursor drawn at the mouse location.
 ///  As this procedure checks which region the mouse is over, it is
@@ -1332,25 +870,12 @@ void TrackPanel::HandleCursor(wxMouseEvent & event)
 {
    mLastMouseEvent = event;
 
-   // (1), If possible, set the cursor based on the current activity
-   //      ( leave the StatusBar alone ).
-   if( SetCursorByActivity() )
-      return;
-
    const auto foundCell = FindCell( event.m_x, event.m_y );
    auto &track = foundCell.pTrack;
    auto &inner = foundCell.inner;
    auto &pCell = foundCell.pCell;
    auto &pTrack = foundCell.pTrack;
    wxCursor *pCursor = NULL;
-
-   // (2) The easy cases are done.
-   // Now we've got to hit-test against a number of different possibilities.
-   // We could be over the label or a vertical ruler etc...
-
-   // Strategy here is to set the tip when we have determined and
-   // set the correct cursor.  We stop doing tests for what we've
-   // hit once the tip is not NULL.
 
    wxString tip;
 
@@ -1379,125 +904,30 @@ void TrackPanel::HandleCursor(wxMouseEvent & event)
          SetCursor(*pCursor);
    }
 
-   if( pCursor == NULL && tip == wxString() )
-   {
-      ToolsToolBar * ttb = mListener->TP_GetToolsToolBar();
-      if( ttb == NULL )
-         return;
-      // JKC: DetermineToolToUse is called whenever the mouse
-      // moves.  I had some worries about calling it when in
-      // multimode as it then has to hit-test all 'objects' in
-      // the track panel, but performance seems fine in
-      // practice (on a P500).
-      int tool = DetermineToolToUse( ttb, event );
-
-      tip = GetProject()->GetScrubber().StatusMessageForWave();
-      if( tip.IsEmpty() )
-         tip = ttb->GetMessageForTool(tool);
-
-      if( tool != selectTool )
-      {
-         // We don't include the select tool in
-         // SetCursorAndTipByTool() because it's more complex than
-         // the other tool cases.
-         SetCursorAndTipByTool( tool, event, tip);
-      }
-      else
-      {
-         bool bMultiToolMode = ttb->IsDown(multiTool);
-         const wxCursor *pSelection = 0;
-         SetCursorAndTipWhenSelectTool
-            ( pTrack, event, inner, bMultiToolMode, tip, &pSelection );
-         if (pSelection)
-            // Set cursor once only here, to avoid flashing during drags
-            SetCursor(*pSelection);
-      }
-   }
-
    if (pCursor != NULL || tip != wxString())
       mListener->TP_DisplayStatusMessage(tip);
 }
 
-
-/// This method handles various ways of starting and extending
-/// selections.  These are the selections you make by clicking and
-/// dragging over a waveform.
-void TrackPanel::HandleSelect(wxMouseEvent & event)
+void TrackPanel::UpdateSelectionDisplay()
 {
-   const auto foundCell = FindCell(event.m_x, event.m_y);
-   auto &t = foundCell.pTrack;
-   auto &rect = foundCell.rect;
+   // Full refresh since the label area may need to indicate
+   // newly selected tracks.
+   Refresh(false);
 
-   // AS: Ok, did the user just click the mouse, release the mouse,
-   //  or drag?
-   if (event.LeftDown() ||
-      (event.LeftDClick() && event.CmdDown())) {
-      // AS: Now, did they click in a track somewhere?  If so, we want
-      //  to extend the current selection or start a NEW selection,
-      //  depending on the shift key.  If not, cancel all selections.
-      if (t)
-         SelectionHandleClick(event, t, rect);
-   } else if (event.LeftUp() || event.RightUp()) {
-      mSnapManager.reset();
-      // Do not draw yellow lines
-      if (mSnapLeft != -1 || mSnapRight != -1) {
-         mSnapLeft = mSnapRight = -1;
-         Refresh(false);
-      }
+   // Make sure the ruler follows suit.
+   mRuler->DrawSelection();
 
-      SetCapturedTrack( NULL );
-      //Send the NEW selection state to the undo/redo stack:
-      MakeParentModifyState(false);
-
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-      // This stops center snapping with mouse movement
-      mFreqSelMode = FREQ_SEL_INVALID;
-#endif
-
-   } else if (event.LeftDClick() && !event.ShiftDown()) {
-      if (!mCapturedTrack) {
-         mCapturedTrack = t;
-         if (!mCapturedTrack)
-            return;
-      }
-
-      // Deselect all other tracks and select this one.
-      SelectNone();
-
-      SelectTrack(mCapturedTrack, true);
-
-      // Default behavior: select whole track
-      SelectTrackLength(mCapturedTrack);
-
-      // Special case: if we're over a clip in a WaveTrack,
-      // select just that clip
-      if (mCapturedTrack->GetKind() == Track::Wave) {
-         WaveTrack *w = (WaveTrack *)mCapturedTrack;
-         WaveClip *selectedClip = w->GetClipAtX(event.m_x);
-         if (selectedClip) {
-            mViewInfo->selectedRegion.setTimes(
-               selectedClip->GetOffset(), selectedClip->GetEndTime());
-         }
-
-         Refresh(false);
-         goto done;
-      }
-
-      Refresh(false);
-      SetCapturedTrack( NULL );
-      MakeParentModifyState(false);
-   }
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-#ifdef SPECTRAL_EDITING_ESC_KEY
-   else if (!event.IsButton() &&
-            mFreqSelMode == FREQ_SEL_SNAPPING_CENTER &&
-            !mViewInfo->selectedRegion.isPoint())
-      MoveSnappingFreqSelection(event.m_y, rect.y, rect.height, t);
-#endif
-#endif
- done:
-   SelectionHandleDrag(event, t);
+   // As well as the SelectionBar.
+   DisplaySelection();
 }
+
+void TrackPanel::UpdateAccessibility()
+{
+   if (mAx)
+      mAx->Updated();
+}
+
+#ifdef EXPERIMENTAL_SPECTRAL_EDITING
 
 void TrackPanel::SelectTrack(Track *pTrack, bool selected, bool updateLastPicked)
 {
@@ -1630,663 +1060,6 @@ void TrackPanel::ChangeSelectionOnShiftClick(Track * pTrack){
    mLastPickedTrack = pExtendFrom;
 }
 
-/// This method gets called when we're handling selection
-/// and the mouse was just clicked.
-void TrackPanel::SelectionHandleClick(wxMouseEvent & event,
-                                      Track * pTrack, wxRect rect)
-{
-   mCapturedTrack = pTrack;
-   rect.y += kTopMargin;
-   rect.height -= kTopMargin + kBottomMargin;
-   mCapturedRect = rect;
-
-   mMouseCapture=IsSelecting;
-   mInitialSelection = mViewInfo->selectedRegion;
-   mInitialLastPickedTrack = mLastPickedTrack;
-
-   // Save initial state of track selections
-   mInitialTrackSelection.clear();
-   {
-      TrackListIterator iter(GetTracks());
-      for (Track *t = iter.First(); t; t = iter.Next()) {
-         const bool isSelected = t->GetSelected();
-         mInitialTrackSelection.push_back(isSelected);
-      }
-   }
-
-   // We create a NEW snap manager in case any snap-points have changed
-   mSnapManager = std::make_unique<SnapManager>(GetTracks(), mViewInfo);
-
-   mSnapLeft = -1;
-   mSnapRight = -1;
-
-#ifdef USE_MIDI
-   mStretching = false;
-   bool stretch = HitTestStretch(pTrack, rect, event);
-#endif
-
-   bool bShiftDown = event.ShiftDown();
-   bool bCtrlDown = event.ControlDown();
-   if (bShiftDown || (bCtrlDown
-
-#ifdef USE_MIDI
-       && !stretch
-#endif
-   )) {
-
-      if( bShiftDown )
-         ChangeSelectionOnShiftClick( pTrack );
-      if( bCtrlDown ){
-         //Commented out bIsSelected toggles, as in Track Control Panel.
-         //bool bIsSelected = pTrack->GetSelected();
-         //Actual bIsSelected will always add.
-         bool bIsSelected = false;
-         // Don't toggle away the last selected track.
-         if( !bIsSelected || GetSelectedTrackCount() > 1 )
-            SelectTrack( pTrack, !bIsSelected, true );
-         mLastPickedTrack = pTrack;
-      }
-
-      double value;
-      // Shift-click, choose closest boundary
-      SelectionBoundary boundary =
-         ChooseBoundary(event, pTrack, rect, false, false, &value);
-      switch (boundary) {
-         case SBLeft:
-         case SBRight:
-         {
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-            // If drag starts, change time selection only
-            // (also exit frequency snapping)
-            mFreqSelMode = FREQ_SEL_INVALID;
-#endif
-            mSelStartValid = true;
-            mSelStart = value;
-            ExtendSelection(event.m_x, rect.x, pTrack);
-            break;
-         }
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-         case SBBottom:
-         case SBTop:
-         {
-            // Reach this case only for wave tracks
-            mFreqSelTrack = static_cast<const WaveTrack *>(pTrack);
-            mFreqSelPin = value;
-            mFreqSelMode =
-               (boundary == SBBottom)
-               ? FREQ_SEL_BOTTOM_FREE : FREQ_SEL_TOP_FREE;
-
-            // Drag frequency only, not time:
-            mSelStartValid = false;
-            ExtendFreqSelection(event.m_y, rect.y, rect.height);
-            break;
-         }
-         case SBCenter:
-            HandleCenterFrequencyClick(true,
-               // Reach this case only for wave tracks
-               static_cast<const WaveTrack *>(pTrack), value);
-            break;
-#endif
-         default:
-            wxASSERT(false);
-      };
-
-      UpdateSelectionDisplay();
-      // For persistence of the selection change:
-      MakeParentModifyState(false);
-      return;
-   }
-
-   else if(event.CmdDown()
-#ifdef USE_MIDI
-      && !stretch
-#endif
-   ) {
-
-      // Used to jump the play head, but it is redundant with timeline quick play
-      // StartOrJumpPlayback(event);
-
-      // Not starting a drag
-      SetCapturedTrack(NULL, IsUncaptured);
-      return;
-   }
-
-   //Make sure you are within the selected track
-   bool startNewSelection = true;
-   if (pTrack && pTrack->GetSelected()) {
-      // Adjusting selection edges can be turned off in the
-      // preferences now
-      if (mViewInfo->bAdjustSelectionEdges) {
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-         if (mFreqSelMode == FREQ_SEL_SNAPPING_CENTER &&
-            isSpectralSelectionTrack(pTrack)) {
-            // Ignore whether we are inside the time selection.
-            // Exit center-snapping, start dragging the width.
-            mFreqSelMode = FREQ_SEL_PINNED_CENTER;
-            mFreqSelTrack = static_cast<WaveTrack*>(pTrack);
-            mFreqSelPin = mViewInfo->selectedRegion.fc();
-            // Do not adjust time boundaries
-            mSelStartValid = false;
-            ExtendFreqSelection(event.m_y, rect.y, rect.height);
-            UpdateSelectionDisplay();
-            // Frequency selection persists too, so do this:
-            MakeParentModifyState(false);
-
-            return;
-         }
-         else
-#endif
-         {
-            // Not shift-down, choose boundary only within snapping
-            double value;
-            SelectionBoundary boundary =
-               ChooseBoundary(event, pTrack, rect, true, true, &value);
-            switch (boundary) {
-            case SBNone:
-               // startNewSelection remains true
-               break;
-            case SBLeft:
-            case SBRight:
-               startNewSelection = false;
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-               // Disable frequency selection
-               mFreqSelMode = FREQ_SEL_INVALID;
-#endif
-               mSelStartValid = true;
-               mSelStart = value;
-               break;
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-            case SBBottom:
-            case SBTop:
-            case SBWidth:
-               startNewSelection = false;
-               // Disable time selection
-               mSelStartValid = false;
-               // Reach this case only for wave tracks
-               mFreqSelTrack = static_cast<const WaveTrack*>(pTrack);
-               mFreqSelPin = value;
-               mFreqSelMode =
-                  (boundary == SBWidth) ? FREQ_SEL_PINNED_CENTER :
-                  (boundary == SBBottom) ? FREQ_SEL_BOTTOM_FREE :
-                  FREQ_SEL_TOP_FREE;
-               break;
-            case SBCenter:
-               HandleCenterFrequencyClick(false,
-                  // Reach this case only for wave track
-                  static_cast<const WaveTrack *>(pTrack), value);
-               startNewSelection = false;
-               break;
-#endif
-            default:
-               wxASSERT(false);
-            }
-         }
-      } // mViewInfo->bAdjustSelectionEdges
-   }
-
-#ifdef USE_MIDI
-   if (stretch) {
-      // stretch is true only when pTrack is note
-      const auto nt = static_cast<NoteTrack *>(pTrack);
-      // find nearest beat to sel0, sel1
-      double minPeriod = 0.05; // minimum beat period
-      double qBeat0, qBeat1;
-      double centerBeat = 0.0f;
-      mStretchSel0 = nt->NearestBeatTime(mViewInfo->selectedRegion.t0(), &qBeat0);
-      mStretchSel1 = nt->NearestBeatTime(mViewInfo->selectedRegion.t1(), &qBeat1);
-
-      // If there is not (almost) a beat to stretch that is slower
-      // than 20 beats per second, don't stretch
-      if (within(qBeat0, qBeat1, 0.9) ||
-          (mStretchSel1 - mStretchSel0) / (qBeat1 - qBeat0) < minPeriod) return;
-
-      if (startNewSelection) { // mouse is not at an edge, but after
-         // quantization, we could be indicating the selection edge
-         mSelStartValid = true;
-         mSelStart = std::max(0.0, mViewInfo->PositionToTime(event.m_x, rect.x));
-         mStretchStart = nt->NearestBeatTime(mSelStart, &centerBeat);
-         if (within(qBeat0, centerBeat, 0.1)) {
-            mListener->TP_DisplayStatusMessage(
-                    _("Click and drag to stretch selected region."));
-            SetCursor(*mStretchLeftCursor);
-            // mStretchMode = stretchLeft;
-            mSelStart = mViewInfo->selectedRegion.t1();
-            // condition that implies stretchLeft
-            startNewSelection = false;
-         } else if (within(qBeat1, centerBeat, 0.1)) {
-            mListener->TP_DisplayStatusMessage(
-                    _("Click and drag to stretch selected region."));
-            SetCursor(*mStretchRightCursor);
-            // mStretchMode = stretchRight;
-            mSelStart = mViewInfo->selectedRegion.t0();
-            // condition that implies stretchRight
-            startNewSelection = false;
-         }
-      }
-
-      if (startNewSelection) {
-         mStretchMode = stretchCenter;
-         mStretchLeftBeats = qBeat1 - centerBeat;
-         mStretchRightBeats = centerBeat - qBeat0;
-      } else if (mSelStartValid && mViewInfo->selectedRegion.t1() == mSelStart) {
-         // note that at this point, mSelStart is at the opposite
-         // end of the selection from the cursor. If the cursor is
-         // over sel0, then mSelStart is at sel1.
-         mStretchMode = stretchLeft;
-      } else {
-         mStretchMode = stretchRight;
-      }
-
-      if (mStretchMode == stretchLeft) {
-         mStretchLeftBeats = 0;
-         mStretchRightBeats = qBeat1 - qBeat0;
-      } else if (mStretchMode == stretchRight) {
-         mStretchLeftBeats = qBeat1 - qBeat0;
-         mStretchRightBeats = 0;
-      }
-      mViewInfo->selectedRegion.setTimes(mStretchSel0, mStretchSel1);
-      mStretching = true;
-      mStretched = false;
-
-      /* i18n-hint: (noun) The track that is used for MIDI notes which can be
-      dragged to change their duration.*/
-      MakeParentPushState(_("Stretch Note Track"),
-      /* i18n-hint: In the history list, indicates a MIDI note has
-      been dragged to change its duration (stretch it). Using either past
-      or present tense is fine here.  If unsure, go for whichever is
-      shorter.*/
-      _("Stretch"));
-
-      // Full refresh since the label area may need to indicate
-      // newly selected tracks. (I'm really not sure if the label area
-      // needs to be refreshed or how to just refresh non-label areas.-RBD)
-      Refresh(false);
-
-      // Make sure the ruler follows suit.
-      mRuler->DrawSelection();
-
-      // As well as the SelectionBar.
-      DisplaySelection();
-
-      return;
-   }
-#endif
-   if (startNewSelection) {
-      // If we didn't move a selection boundary, start a NEW selection
-      SelectNone();
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-      StartFreqSelection (event.m_y, rect.y, rect.height, pTrack);
-#endif
-      StartSelection(event.m_x, rect.x);
-      SelectTrack(pTrack, true);
-      SetFocusedTrack(pTrack);
-      //On-Demand: check to see if there is an OD thing associated with this track.
-      if (pTrack->GetKind() == Track::Wave) {
-         if(ODManager::IsInstanceCreated())
-            ODManager::Instance()->DemandTrackUpdate((WaveTrack*)pTrack,mSelStart);
-      }
-      DisplaySelection();
-   }
-}
-
-
-/// Reset our selection markers.
-void TrackPanel::StartSelection(int mouseXCoordinate, int trackLeftEdge)
-{
-   mSelStartValid = true;
-   mSelStart = std::max(0.0, mViewInfo->PositionToTime(mouseXCoordinate, trackLeftEdge));
-
-   double s = mSelStart;
-
-   if (mSnapManager) {
-      mSnapLeft = -1;
-      mSnapRight = -1;
-      bool snappedPoint, snappedTime;
-      if (mSnapManager->Snap(mCapturedTrack, mSelStart, false,
-                             &s, &snappedPoint, &snappedTime)) {
-         if (snappedPoint)
-            mSnapLeft = mViewInfo->TimeToPosition(s, trackLeftEdge);
-      }
-   }
-
-   mViewInfo->selectedRegion.setTimes(s, s);
-
-   SonifyBeginModifyState();
-   MakeParentModifyState(false);
-   SonifyEndModifyState();
-}
-
-/// Extend the existing selection
-void TrackPanel::ExtendSelection(int mouseXCoordinate, int trackLeftEdge,
-                                 Track *pTrack)
-{
-   if (!mSelStartValid)
-      // Must be dragging frequency bounds only.
-      return;
-
-   double selend = std::max(0.0, mViewInfo->PositionToTime(mouseXCoordinate, trackLeftEdge));
-   clip_bottom(selend, 0.0);
-
-   double origSel0, origSel1;
-   double sel0, sel1;
-
-   if (pTrack == NULL && mCapturedTrack != NULL)
-      pTrack = mCapturedTrack;
-
-   if (mSelStart < selend) {
-      sel0 = mSelStart;
-      sel1 = selend;
-   }
-   else {
-      sel1 = mSelStart;
-      sel0 = selend;
-   }
-
-   origSel0 = sel0;
-   origSel1 = sel1;
-
-   if (mSnapManager) {
-      mSnapLeft = -1;
-      mSnapRight = -1;
-      bool snappedPoint, snappedTime;
-      if (mSnapManager->Snap(mCapturedTrack, sel0, false,
-                             &sel0, &snappedPoint, &snappedTime)) {
-         if (snappedPoint)
-            mSnapLeft = mViewInfo->TimeToPosition(sel0, trackLeftEdge);
-      }
-      if (mSnapManager->Snap(mCapturedTrack, sel1, true,
-                             &sel1, &snappedPoint, &snappedTime)) {
-         if (snappedPoint)
-            mSnapRight = mViewInfo->TimeToPosition(sel1, trackLeftEdge);
-      }
-
-      // Check if selection endpoints are too close together to snap (unless
-      // using snap-to-time -- then we always accept the snap results)
-      if (mSnapLeft >= 0 && mSnapRight >= 0 && mSnapRight - mSnapLeft < 3 &&
-            !snappedTime) {
-         sel0 = origSel0;
-         sel1 = origSel1;
-         mSnapLeft = -1;
-         mSnapRight = -1;
-      }
-   }
-
-   mViewInfo->selectedRegion.setTimes(sel0, sel1);
-
-   //On-Demand: check to see if there is an OD thing associated with this track.  If so we want to update the focal point for the task.
-   if (pTrack && (pTrack->GetKind() == Track::Wave) && ODManager::IsInstanceCreated())
-      ODManager::Instance()->DemandTrackUpdate((WaveTrack*)pTrack,sel0); //sel0 is sometimes less than mSelStart
-}
-
-void TrackPanel::UpdateSelectionDisplay()
-{
-   // Full refresh since the label area may need to indicate
-   // newly selected tracks.
-   Refresh(false);
-
-   // Make sure the ruler follows suit.
-   mRuler->DrawSelection();
-
-   // As well as the SelectionBar.
-   DisplaySelection();
-}
-
-void TrackPanel::UpdateAccessibility()
-{
-   if (mAx)
-      mAx->Updated();
-}
-
-void TrackPanel::MessageForScreenReader(const wxString& message)
-{
-   if (mAx)
-      mAx->MessageForScreenReader(message);
-}
-
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-namespace {
-   
-inline double findMaxRatio(double center, double rate)
-{
-   const double minFrequency = 1.0;
-   const double maxFrequency = (rate / 2.0);
-   const double frequency =
-      std::min(maxFrequency,
-      std::max(minFrequency, center));
-   return
-      std::min(frequency / minFrequency, maxFrequency / frequency);
-}
-
-}
-
-void TrackPanel::SnapCenterOnce(const WaveTrack *pTrack, bool up)
-{
-   const SpectrogramSettings &settings = pTrack->GetSpectrogramSettings();
-   const auto windowSize = settings.GetFFTLength();
-   const double rate = pTrack->GetRate();
-   const double nyq = rate / 2.0;
-   const double binFrequency = rate / windowSize;
-
-   double f1 = mViewInfo->selectedRegion.f1();
-   double centerFrequency = mViewInfo->selectedRegion.fc();
-   if (centerFrequency <= 0) {
-      centerFrequency = up ? binFrequency : nyq;
-      f1 = centerFrequency * sqrt(2.0);
-   }
-
-   const double ratio = f1 / centerFrequency;
-   const int originalBin = floor(0.5 + centerFrequency / binFrequency);
-   const int limitingBin = up ? floor(0.5 + nyq / binFrequency) : 1;
-
-   // This is crude and wasteful, doing the FFT each time the command is called.
-   // It would be better to cache the data, but then invalidation of the cache would
-   // need doing in all places that change the time selection.
-   StartSnappingFreqSelection(pTrack);
-   double snappedFrequency = centerFrequency;
-   int bin = originalBin;
-   if (up) {
-      while (snappedFrequency <= centerFrequency &&
-             bin < limitingBin)
-         snappedFrequency = mFrequencySnapper->FindPeak(++bin * binFrequency, NULL);
-   }
-   else {
-      while (snappedFrequency >= centerFrequency &&
-         bin > limitingBin)
-         snappedFrequency = mFrequencySnapper->FindPeak(--bin * binFrequency, NULL);
-   }
-
-   mViewInfo->selectedRegion.setFrequencies
-      (snappedFrequency / ratio, snappedFrequency * ratio);
-}
-
-void TrackPanel::StartSnappingFreqSelection (const WaveTrack *pTrack)
-{
-   static const size_t minLength = 8;
-
-   const double rate = pTrack->GetRate();
-
-   // Grab samples, just for this track, at these times
-   std::vector<float> frequencySnappingData;
-   const auto start =
-      pTrack->TimeToLongSamples(mViewInfo->selectedRegion.t0());
-   const auto end =
-      pTrack->TimeToLongSamples(mViewInfo->selectedRegion.t1());
-   const auto length =
-      std::min(frequencySnappingData.max_size(),
-         limitSampleBufferSize( 10485760, // as in FreqWindow.cpp
-                               end - start ));
-   const auto effectiveLength = std::max(minLength, length);
-   frequencySnappingData.resize(effectiveLength, 0.0f);
-
-   pTrack->Get(
-      reinterpret_cast<samplePtr>(&frequencySnappingData[0]),
-      floatSample, start, length, fillZero,
-      // Don't try to cope with exceptions, just read zeroes instead.
-      false);
-
-   // Use same settings as are now used for spectrogram display,
-   // except, shrink the window as needed so we get some answers
-
-   const SpectrogramSettings &settings = pTrack->GetSpectrogramSettings();
-   auto windowSize = settings.GetFFTLength();
-
-   while(windowSize > effectiveLength)
-      windowSize >>= 1;
-   const int windowType = settings.windowType;
-
-   mFrequencySnapper->Calculate(
-      SpectrumAnalyst::Spectrum, windowType, windowSize, rate,
-      &frequencySnappingData[0], length);
-
-   // We can now throw away the sample data but we keep the spectrum.
-}
-
-void TrackPanel::MoveSnappingFreqSelection (int mouseYCoordinate,
-                                            int trackTopEdge,
-                                            int trackHeight, Track *pTrack)
-{
-   if (pTrack &&
-       pTrack->GetSelected() &&
-       isSpectralSelectionTrack(pTrack)) {
-      // Spectral selection track is always wave
-      const auto wt = static_cast<const WaveTrack *>(pTrack);
-      // PRL:
-      // What happens if center snapping selection began in one spectrogram track,
-      // then continues inside another?  We do not then recalculate
-      // the spectrum (as was done in StartSnappingFreqSelection)
-      // but snap according to the peaks in the old track.
-      // I am not worrying about that odd case.
-      const double rate = wt->GetRate();
-      const double frequency =
-         PositionToFrequency(wt, false, mouseYCoordinate,
-         trackTopEdge, trackHeight);
-      const double snappedFrequency =
-         mFrequencySnapper->FindPeak(frequency, NULL);
-      const double maxRatio = findMaxRatio(snappedFrequency, rate);
-      double ratio = 2.0; // An arbitrary octave on each side, at most
-      {
-         const double f0 = mViewInfo->selectedRegion.f0();
-         const double f1 = mViewInfo->selectedRegion.f1();
-         if (f1 >= f0 && f0 >= 0)
-            // Preserve already chosen ratio instead
-            ratio = sqrt(f1 / f0);
-      }
-      ratio = std::min(ratio, maxRatio);
-
-      mFreqSelPin = snappedFrequency;
-      mViewInfo->selectedRegion.setFrequencies(
-         snappedFrequency / ratio, snappedFrequency * ratio);
-
-      mFreqSelTrack = wt;
-      // SelectNone();
-      // SelectTrack(pTrack, true);
-      SetFocusedTrack(pTrack);
-   }
-}
-
-void TrackPanel::StartFreqSelection (int mouseYCoordinate, int trackTopEdge,
-                                     int trackHeight, Track *pTrack)
-{
-   mFreqSelTrack = NULL;
-   mFreqSelMode = FREQ_SEL_INVALID;
-   mFreqSelPin = SelectedRegion::UndefinedFrequency;
-
-   if (isSpectralSelectionTrack(pTrack)) {
-      // Spectral selection track is always wave
-      mFreqSelTrack = static_cast<const WaveTrack *>(pTrack);
-      mFreqSelMode = FREQ_SEL_FREE;
-      mFreqSelPin =
-         PositionToFrequency(mFreqSelTrack, false, mouseYCoordinate,
-                             trackTopEdge, trackHeight);
-      mViewInfo->selectedRegion.setFrequencies(mFreqSelPin, mFreqSelPin);
-   }
-}
-
-void TrackPanel::ExtendFreqSelection(int mouseYCoordinate, int trackTopEdge,
-                                     int trackHeight)
-{
-   // When dragWidth is true, and not dragging the center,
-   // adjust both top and bottom about geometric mean.
-
-   if (mFreqSelMode == FREQ_SEL_INVALID ||
-       mFreqSelMode == FREQ_SEL_SNAPPING_CENTER)
-      return;
-
-   // Extension happens only when dragging in the same track in which we
-   // started, and that is of a spectrogram display type.
-
-   const WaveTrack* wt = mFreqSelTrack;
-   const double rate =  wt->GetRate();
-   const double frequency =
-      PositionToFrequency(wt, true, mouseYCoordinate,
-         trackTopEdge, trackHeight);
-
-   // Dragging center?
-   if (mFreqSelMode == FREQ_SEL_DRAG_CENTER) {
-      if (frequency == rate || frequency < 1.0)
-         // snapped to top or bottom
-         mViewInfo->selectedRegion.setFrequencies(
-            SelectedRegion::UndefinedFrequency,
-            SelectedRegion::UndefinedFrequency);
-      else {
-         // mFreqSelPin holds the ratio of top to center
-         const double maxRatio = findMaxRatio(frequency, rate);
-         const double ratio = std::min(maxRatio, mFreqSelPin);
-         mViewInfo->selectedRegion.setFrequencies(
-            frequency / ratio, frequency * ratio);
-      }
-   }
-   else if (mFreqSelMode == FREQ_SEL_PINNED_CENTER) {
-      if (mFreqSelPin >= 0) {
-         // Change both upper and lower edges leaving centre where it is.
-         if (frequency == rate || frequency < 1.0)
-            // snapped to top or bottom
-            mViewInfo->selectedRegion.setFrequencies(
-               SelectedRegion::UndefinedFrequency,
-               SelectedRegion::UndefinedFrequency);
-         else {
-            // Given center and mouse position, find ratio of the larger to the
-            // smaller, limit that to the frequency scale bounds, and adjust
-            // top and bottom accordingly.
-            const double maxRatio = findMaxRatio(mFreqSelPin, rate);
-            double ratio = frequency / mFreqSelPin;
-            if (ratio < 1.0)
-               ratio = 1.0 / ratio;
-            ratio = std::min(maxRatio, ratio);
-            mViewInfo->selectedRegion.setFrequencies(
-               mFreqSelPin / ratio, mFreqSelPin * ratio);
-         }
-      }
-   }
-   else {
-      // Dragging of upper or lower.
-      const bool bottomDefined =
-         !(mFreqSelMode == FREQ_SEL_TOP_FREE && mFreqSelPin < 0);
-      const bool topDefined =
-         !(mFreqSelMode == FREQ_SEL_BOTTOM_FREE && mFreqSelPin < 0);
-      if (!bottomDefined || (topDefined && mFreqSelPin < frequency)) {
-         // Adjust top
-         if (frequency == rate)
-            // snapped high; upper frequency is undefined
-            mViewInfo->selectedRegion.setF1(SelectedRegion::UndefinedFrequency);
-         else
-            mViewInfo->selectedRegion.setF1(std::max(1.0, frequency));
-
-         mViewInfo->selectedRegion.setF0(mFreqSelPin);
-      }
-      else {
-         // Adjust bottom
-         if (frequency < 1.0)
-            // snapped low; lower frequency is undefined
-            mViewInfo->selectedRegion.setF0(SelectedRegion::UndefinedFrequency);
-         else
-            mViewInfo->selectedRegion.setF0(std::min(rate / 2.0, frequency));
-
-         mViewInfo->selectedRegion.setF1(mFreqSelPin);
-      }
-   }
-}
-
 void TrackPanel::ToggleSpectralSelection()
 {
    SelectedRegion &region = mViewInfo->selectedRegion;
@@ -2305,474 +1078,24 @@ void TrackPanel::ToggleSpectralSelection()
    else
       region.setFrequencies(mLastF0, mLastF1);
 }
-
-void TrackPanel::ResetFreqSelectionPin(double hintFrequency, bool logF)
-{
-   switch (mFreqSelMode) {
-   case FREQ_SEL_INVALID:
-   case FREQ_SEL_SNAPPING_CENTER:
-      mFreqSelPin = -1.0;
-      break;
-
-   case FREQ_SEL_PINNED_CENTER:
-      mFreqSelPin = mViewInfo->selectedRegion.fc();
-      break;
-
-   case FREQ_SEL_DRAG_CENTER:
-      {
-         // Re-pin the width
-         const double f0 = mViewInfo->selectedRegion.f0();
-         const double f1 = mViewInfo->selectedRegion.f1();
-         if (f0 >= 0 && f1 >= 0)
-            mFreqSelPin = sqrt(f1 / f0);
-         else
-            mFreqSelPin = -1.0;
-      }
-      break;
-
-   case FREQ_SEL_FREE:
-      // Pin which?  Farther from the hint which is the presumed
-      // mouse position.
-      {
-         const double f0 = mViewInfo->selectedRegion.f0();
-         const double f1 = mViewInfo->selectedRegion.f1();
-         if (logF) {
-            if (f1 < 0)
-               mFreqSelPin = f0;
-            else {
-               const double logf1 = log(std::max(1.0, f1));
-               const double logf0 = log(std::max(1.0, f0));
-               const double logHint = log(std::max(1.0, hintFrequency));
-               if (std::abs (logHint - logf1) < std::abs (logHint - logf0))
-                  mFreqSelPin = f0;
-               else
-                  mFreqSelPin = f1;
-            }
-         }
-         else {
-            if (f1 < 0 ||
-                std::abs (hintFrequency - f1) < std::abs (hintFrequency - f0))
-               mFreqSelPin = f0;
-            else
-               mFreqSelPin = f1;
-            }
-      }
-      break;
-
-   case FREQ_SEL_TOP_FREE:
-      mFreqSelPin = mViewInfo->selectedRegion.f0();
-      break;
-
-   case FREQ_SEL_BOTTOM_FREE:
-      mFreqSelPin = mViewInfo->selectedRegion.f1();
-      break;
-
-   default:
-      wxASSERT(false);
-   }
-}
 #endif
 
-#ifdef USE_MIDI
-void TrackPanel::Stretch(int mouseXCoordinate, int trackLeftEdge,
-                         Track *pTrack)
+void TrackPanel::MessageForScreenReader(const wxString& message)
 {
-   if (mStretched) { // Undo stretch and redo it with NEW mouse coordinates
-      // Drag handling was not originally implemented with Undo in mind --
-      // there are saved pointers to tracks that are not supposed to change.
-      // Undo will change tracks, so convert pTrack, mCapturedTrack to index
-      // values, then look them up after the Undo
-      TrackListIterator iter(GetTracks());
-      int pTrackIndex = pTrack->GetIndex();
-      int capturedTrackIndex =
-         (mCapturedTrack ? mCapturedTrack->GetIndex() : 0);
-
-      GetProject()->OnUndo();
-
-      // Undo brings us back to the pre-click state, but we want to
-      // quantize selected region to integer beat boundaries. These
-      // were saved in mStretchSel[12] variables:
-      mViewInfo->selectedRegion.setTimes(mStretchSel0, mStretchSel1);
-
-      mStretched = false;
-      int index = 0;
-      for (Track *t = iter.First(GetTracks()); t; t = iter.Next()) {
-         if (index == pTrackIndex) pTrack = t;
-         if (mCapturedTrack && index == capturedTrackIndex) mCapturedTrack = t;
-         index++;
-      }
-   }
-
-   if (pTrack == NULL && mCapturedTrack != NULL)
-      pTrack = mCapturedTrack;
-
-   if (!pTrack || pTrack->GetKind() != Track::Note) {
-      return;
-   }
-
-   NoteTrack *pNt = (NoteTrack *) pTrack;
-   double moveto = std::max(0.0, mViewInfo->PositionToTime(mouseXCoordinate, trackLeftEdge));
-
-   // check to make sure tempo is not higher than 20 beats per second
-   // (In principle, tempo can be higher, but not infinity.)
-   double minPeriod = 0.05; // minimum beat period
-   double qBeat0, qBeat1;
-   pNt->NearestBeatTime(mViewInfo->selectedRegion.t0(), &qBeat0); // get beat
-   pNt->NearestBeatTime(mViewInfo->selectedRegion.t1(), &qBeat1);
-
-   // We could be moving 3 things: left edge, right edge, a point between
-   switch (mStretchMode) {
-   case stretchLeft: {
-      // make sure target duration is not too short
-      double dur = mViewInfo->selectedRegion.t1() - moveto;
-      if (dur < mStretchRightBeats * minPeriod) {
-         dur = mStretchRightBeats * minPeriod;
-         moveto = mViewInfo->selectedRegion.t1() - dur;
-      }
-      if (pNt->StretchRegion(mStretchSel0, mStretchSel1, dur)) {
-         pNt->SetOffset(pNt->GetOffset() + moveto - mStretchSel0);
-         mViewInfo->selectedRegion.setT0(moveto);
-      }
-      break;
-   }
-   case stretchRight: {
-      // make sure target duration is not too short
-      double dur = moveto - mViewInfo->selectedRegion.t0();
-      if (dur < mStretchLeftBeats * minPeriod) {
-         dur = mStretchLeftBeats * minPeriod;
-         moveto = mStretchSel0 + dur;
-      }
-      if (pNt->StretchRegion(mStretchSel0, mStretchSel1, dur)) {
-         mViewInfo->selectedRegion.setT1(moveto);
-      }
-      break;
-   }
-   case stretchCenter: {
-      // make sure both left and right target durations are not too short
-      double left_dur = moveto - mViewInfo->selectedRegion.t0();
-      double right_dur = mViewInfo->selectedRegion.t1() - moveto;
-      double centerBeat;
-      pNt->NearestBeatTime(mSelStart, &centerBeat);
-      if (left_dur < mStretchLeftBeats * minPeriod) {
-         left_dur = mStretchLeftBeats * minPeriod;
-         moveto = mStretchSel0 + left_dur;
-      }
-      if (right_dur < mStretchRightBeats * minPeriod) {
-         right_dur = mStretchRightBeats * minPeriod;
-         moveto = mStretchSel1 - right_dur;
-      }
-      pNt->StretchRegion(mStretchStart, mStretchSel1, right_dur);
-      pNt->StretchRegion(mStretchSel0, mStretchStart, left_dur);
-      break;
-   }
-   default:
-      wxASSERT(false);
-      break;
-   }
-   MakeParentPushState(_("Stretch Note Track"), _("Stretch"),
-      UndoPush::CONSOLIDATE | UndoPush::AUTOSAVE);
-   mStretched = true;
-   Refresh(false);
-}
-#endif
-
-/// AS: If we're dragging to extend a selection (or actually,
-///  if the screen is scrolling while you're selecting), we
-///  handle it here.
-void TrackPanel::SelectionHandleDrag(wxMouseEvent & event, Track *clickedTrack)
-{
-   // AS: If we're not in the process of selecting (set in
-   //  the SelectionHandleClick above), fuhggeddaboudit.
-   if (mMouseCapture!=IsSelecting)
-      return;
-
-   // Also fuhggeddaboudit if we're not dragging and not autoscrolling.
-   if (!event.Dragging() && !mAutoScrolling)
-      return;
-
-   if (event.CmdDown()) {
-      // Ctrl-drag has no meaning, fuhggeddaboudit
-      // JKC YES it has meaning.
-      //return;
-   }
-
-   wxRect rect      = mCapturedRect;
-   Track *pTrack = mCapturedTrack;
-
-   // Also fuhggeddaboudit if not in a track.
-   if (!pTrack)
-      return;
-
-   int x = mAutoScrolling ? mMouseMostRecentX : event.m_x;
-   int y = mAutoScrolling ? mMouseMostRecentY : event.m_y;
-
-   // JKC: Logic to prevent a selection smaller than 5 pixels to
-   // prevent accidental dragging when selecting.
-   // (if user really wants a tiny selection, they should zoom in).
-   // Can someone make this value of '5' configurable in
-   // preferences?
-   const int minimumSizedSelection = 5; //measured in pixels
-
-   // Might be dragging frequency bounds only, test
-   if (mSelStartValid) {
-      wxInt64 SelStart = mViewInfo->TimeToPosition(mSelStart, rect.x); //cvt time to pixels.
-      // Abandon this drag if selecting < 5 pixels.
-      if (wxLongLong(SelStart-x).Abs() < minimumSizedSelection
-#ifdef USE_MIDI        // limiting selection size is good, and not starting
-          && !mStretching // stretch unless mouse moves 5 pixels is good, but
-#endif                 // once stretching starts, it's ok to move even 1 pixel
-          )
-          return;
-   }
-
-   // Handle which tracks are selected
-   Track *sTrack = pTrack;
-   Track *eTrack = FindCell(x, y).pTrack;
-   if( !event.ControlDown() )
-      SelectRangeOfTracks(sTrack, eTrack);
-
-#ifdef USE_MIDI
-   if (mStretching) {
-      // the following is also in ExtendSelection, called below
-      // probably a good idea to "hoist" the code to before this "if" stmt
-      if (clickedTrack == NULL && mCapturedTrack != NULL)
-         clickedTrack = mCapturedTrack;
-      Stretch(x, rect.x, clickedTrack);
-      return;
-   }
-#endif
-
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-#ifndef SPECTRAL_EDITING_ESC_KEY
-   if (mFreqSelMode == FREQ_SEL_SNAPPING_CENTER &&
-      !mViewInfo->selectedRegion.isPoint())
-      MoveSnappingFreqSelection(y, rect.y, rect.height, pTrack);
-   else
-#endif
-   if (mFreqSelTrack == pTrack)
-      ExtendFreqSelection(y, rect.y, rect.height);
-#endif
-
-   ExtendSelection(x, rect.x, clickedTrack);
-   // If scrubbing does not use the helper poller thread, then
-   // don't do this at every mouse event, because it slows down seek-scrub.
-   // Instead, let OnTimer do it, which is often enough.
-   // And even if scrubbing does use the thread, then skipping this does not
-   // bring that advantage, but it is probably still a good idea anyway.
-   // UpdateSelectionDisplay();
-}
-
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-// Seems 4 is too small to work at the top.  Why?
-enum { FREQ_SNAP_DISTANCE = 10 };
-
-/// Converts a position (mouse Y coordinate) to
-/// frequency, in Hz.
-double TrackPanel::PositionToFrequency(const WaveTrack *wt,
-                                       bool maySnap,
-                                       wxInt64 mouseYCoordinate,
-                                       wxInt64 trackTopEdge,
-                                       int trackHeight) const
-{
-   const double rate = wt->GetRate();
-
-   // Handle snapping
-   if (maySnap &&
-       mouseYCoordinate - trackTopEdge < FREQ_SNAP_DISTANCE)
-      return rate;
-   if (maySnap &&
-       trackTopEdge + trackHeight - mouseYCoordinate < FREQ_SNAP_DISTANCE)
-      return -1;
-
-   const SpectrogramSettings &settings = wt->GetSpectrogramSettings();
-   float minFreq, maxFreq;
-   wt->GetSpectrumBounds(&minFreq, &maxFreq);
-   const NumberScale numberScale( settings.GetScale( minFreq, maxFreq ) );
-   const double p = double(mouseYCoordinate - trackTopEdge) / trackHeight;
-   return numberScale.PositionToValue(1.0 - p);
-}
-
-/// Converts a frequency to screen y position.
-wxInt64 TrackPanel::FrequencyToPosition(const WaveTrack *wt,
-                                        double frequency,
-                                        wxInt64 trackTopEdge,
-                                        int trackHeight) const
-{
-   const double rate = wt->GetRate();
-
-   const SpectrogramSettings &settings = wt->GetSpectrogramSettings();
-   float minFreq, maxFreq;
-   wt->GetSpectrumBounds(&minFreq, &maxFreq);
-   const NumberScale numberScale( settings.GetScale( minFreq, maxFreq ) );
-   const float p = numberScale.ValueToPosition(frequency);
-   return trackTopEdge + wxInt64((1.0 - p) * trackHeight);
-}
-#endif
-
-template<typename T>
-inline void SetIfNotNull( T * pValue, const T Value )
-{
-   if( pValue == NULL )
-      return;
-   *pValue = Value;
-}
-
-
-TrackPanel::SelectionBoundary TrackPanel::ChooseTimeBoundary
-(double selend, bool onlyWithinSnapDistance,
- wxInt64 *pPixelDist, double *pPinValue) const
-{
-   const double t0 = mViewInfo->selectedRegion.t0();
-   const double t1 = mViewInfo->selectedRegion.t1();
-   const wxInt64 posS = mViewInfo->TimeToPosition(selend);
-   const wxInt64 pos0 = mViewInfo->TimeToPosition(t0);
-   wxInt64 pixelDist = std::abs(posS - pos0);
-   bool chooseLeft = true;
-
-   if (mViewInfo->selectedRegion.isPoint())
-      // Special case when selection is a point, and thus left
-      // and right distances are the same
-      chooseLeft = (selend < t0);
-   else {
-      const wxInt64 pos1 = mViewInfo->TimeToPosition(t1);
-      const wxInt64 rightDist = std::abs(posS - pos1);
-      if (rightDist < pixelDist)
-         chooseLeft = false, pixelDist = rightDist;
-   }
-
-   SetIfNotNull(pPixelDist, pixelDist);
-
-   if (onlyWithinSnapDistance &&
-       pixelDist >= SELECTION_RESIZE_REGION) {
-      SetIfNotNull( pPinValue, -1.0);
-      return SBNone;
-   }
-   else if (chooseLeft) {
-      SetIfNotNull( pPinValue, t1);
-      return SBLeft;
-   }
-   else {
-      SetIfNotNull( pPinValue, t0);
-      return SBRight;
-   }
-}
-
-
-TrackPanel::SelectionBoundary TrackPanel::ChooseBoundary
-(const wxMouseEvent & event, const Track *pTrack, const wxRect &rect,
-bool mayDragWidth, bool onlyWithinSnapDistance,
- double *pPinValue) const
-{
-   // Choose one of four boundaries to adjust, or the center frequency.
-   // May choose frequencies only if in a spectrogram view and
-   // within the time boundaries.
-   // May choose no boundary if onlyWithinSnapDistance is true.
-   // Otherwise choose the eligible boundary nearest the mouse click.
-   const double selend = mViewInfo->PositionToTime(event.m_x, rect.x);
-   wxInt64 pixelDist = 0;
-   SelectionBoundary boundary =
-      ChooseTimeBoundary(selend, onlyWithinSnapDistance,
-      &pixelDist, pPinValue);
-
-#ifdef EXPERIMENTAL_SPECTRAL_EDITING
-   const double t0 = mViewInfo->selectedRegion.t0();
-   const double t1 = mViewInfo->selectedRegion.t1();
-   const double f0 = mViewInfo->selectedRegion.f0();
-   const double f1 = mViewInfo->selectedRegion.f1();
-   const double fc = mViewInfo->selectedRegion.fc();
-   double ratio = 0;
-
-   bool chooseTime = true;
-   bool chooseBottom = true;
-   bool chooseCenter = false;
-   // Consider adjustment of frequencies only if mouse is
-   // within the time boundaries
-   if (!mViewInfo->selectedRegion.isPoint() &&
-       t0 <= selend && selend < t1 &&
-       isSpectralSelectionTrack(pTrack)) {
-      // Spectral selection track is always wave
-      const auto wt = static_cast<const WaveTrack*>(pTrack);
-      const wxInt64 bottomSel = (f0 >= 0)
-         ? FrequencyToPosition(wt, f0, rect.y, rect.height)
-         : rect.y + rect.height;
-      const wxInt64 topSel = (f1 >= 0)
-         ? FrequencyToPosition(wt, f1, rect.y, rect.height)
-         : rect.y;
-      wxInt64 signedBottomDist = (int)(event.m_y - bottomSel);
-      wxInt64 verticalDist = std::abs(signedBottomDist);
-      if (bottomSel == topSel)
-         // Top and bottom are too close to resolve on screen
-         chooseBottom = (signedBottomDist >= 0);
-      else {
-         const wxInt64 topDist = abs((int)(event.m_y - topSel));
-         if (topDist < verticalDist)
-            chooseBottom = false, verticalDist = topDist;
-      }
-      if (fc > 0
-#ifdef SPECTRAL_EDITING_ESC_KEY
-         && mayDragWidth
-#endif
-         ) {
-         const wxInt64 centerSel =
-            FrequencyToPosition(wt, fc, rect.y, rect.height);
-         const wxInt64 centerDist = abs((int)(event.m_y - centerSel));
-         if (centerDist < verticalDist)
-            chooseCenter = true, verticalDist = centerDist,
-            ratio = f1 / fc;
-      }
-      if (verticalDist >= 0 &&
-          verticalDist < pixelDist) {
-         pixelDist = verticalDist;
-         chooseTime = false;
-      }
-   }
-
-   if (!chooseTime) {
-      // PRL:  Seems I need a larger tolerance to make snapping work
-      // at top of track, not sure why
-      if (onlyWithinSnapDistance &&
-          pixelDist >= FREQ_SNAP_DISTANCE) {
-         SetIfNotNull( pPinValue, -1.0);
-         return SBNone;
-      }
-      else if (chooseCenter) {
-         SetIfNotNull( pPinValue, ratio);
-         return SBCenter;
-      }
-      else if (mayDragWidth && fc > 0) {
-         SetIfNotNull(pPinValue, fc);
-         return SBWidth;
-      }
-      else if (chooseBottom) {
-         SetIfNotNull( pPinValue, f1 );
-         return SBBottom;
-      }
-      else {
-         SetIfNotNull(pPinValue, f0);
-         return SBTop;
-      }
-   }
-   else
-#endif
-   {
-      return boundary;
-   }
+   if (mAx)
+      mAx->MessageForScreenReader(message);
 }
 
 /// Determines if the a modal tool is active
 bool TrackPanel::IsMouseCaptured()
 {
-   return (mMouseCapture != IsUncaptured || mCapturedTrack != NULL
-      || mUIHandle != NULL);
+   return mUIHandle != NULL;
 }
 
 void TrackPanel::UpdateViewIfNoTracks()
 {
    if (mTracks->IsEmpty())
    {
-      // Be sure not to keep a dangling pointer
-      SetCapturedTrack(NULL);
-
       // BG: There are no more tracks on screen
       //BG: Set zoom to normal
       mViewInfo->SetZoom(ZoomInfo::GetDefaultZoom());
@@ -2810,20 +1133,6 @@ void TrackPanel::OnTrackListUpdated(wxCommandEvent & e)
    // Tracks may have been deleted, so check to see if the focused track was on of them.
    if (!mTracks->Contains(GetFocusedTrack())) {
       SetFocusedTrack(NULL);
-   }
-
-   if (mCapturedTrack &&
-       !mTracks->Contains(mCapturedTrack)) {
-      SetCapturedTrack(nullptr);
-      if (HasCapture())
-         ReleaseMouse();
-   }
-
-   if (mFreqSelTrack &&
-       !mTracks->Contains(mFreqSelTrack)) {
-      mFreqSelTrack = nullptr;
-      if (HasCapture())
-         ReleaseMouse();
    }
 
    if (mLastPickedTrack && !mTracks->Contains(mLastPickedTrack))
@@ -3104,14 +1413,7 @@ try
       event.ResumePropagation(wxEVENT_PROPAGATE_MAX);
    }
 
-   if (!mAutoScrolling) {
-      mMouseMostRecentX = event.m_x;
-      mMouseMostRecentY = event.m_y;
-   }
-
    if (event.LeftDown()) {
-      mCapturedTrack = NULL;
-
       // The activate event is used to make the
       // parent window 'come alive' if it didn't have focus.
       wxActivateEvent e;
@@ -3143,7 +1445,8 @@ try
          ::wxGetMouseState().ButtonIsDown(wxMOUSE_BTN_ANY);
 
       if(!buttons) {
-         SetCapturedTrack(NULL);
+         //SetCapturedTrack(NULL);
+         HandleEscapeKey(true);
 
 #if defined(__WXMAC__)
 
@@ -3196,7 +1499,6 @@ try
       }
    }
    else {
-      // includes case of IsUncaptured
       // This is where most button-downs are detected
       HandleTrackSpecificMouseEvent(event);
    }
@@ -3225,7 +1527,6 @@ catch( ... )
       ;
    else {
       // Ensure these steps, if escape handling did nothing
-      SetCapturedTrack(NULL, IsUncaptured);
       if (HasCapture())
          ReleaseMouse();
       wxMouseEvent dummy;
@@ -3244,6 +1545,9 @@ void TrackPanel::HandleTrackSpecificMouseEvent(wxMouseEvent & event)
    auto &pCell = foundCell.pCell;
    auto &rect = foundCell.rect;
    auto &inner = foundCell.inner;
+
+   if (event.LeftDown())
+      mInitialLastPickedTrack = mLastPickedTrack;
 
    // see if I'm over the border area.
    // TrackPanelResizeHandle is the UIHandle subclass that TrackPanel knows
@@ -3290,8 +1594,7 @@ void TrackPanel::HandleTrackSpecificMouseEvent(wxMouseEvent & event)
 
    bool handled = false;
 
-   ToolsToolBar * pTtb = mListener->TP_GetToolsToolBar();
-   if( !handled && pTtb != NULL && foundCell.type == CellType::Track )
+   if( !handled )
    {
       if (mUIHandle == NULL &&
           pCell &&
@@ -3307,100 +1610,11 @@ void TrackPanel::HandleTrackSpecificMouseEvent(wxMouseEvent & event)
             mpClickedTrack = pTrack;
          ProcessUIHandleResult(this, mRuler, pTrack, pTrack, refreshResult);
       }
-      else {
-         int toolToUse = DetermineToolToUse(pTtb, event);
-
-         switch (toolToUse) {
-         case selectTool:
-            HandleSelect(event);
-            break;
-         }
-      }
    }
 
-   if ((event.Moving() || event.LeftUp())  &&
-       (mMouseCapture == IsUncaptured ))
-//       (mMouseCapture != IsSelecting )
-   {
+   if ((event.Moving() || event.LeftUp()))
       HandleCursor(event);
-   }
-   if (event.LeftUp()) {
-      mCapturedTrack = NULL;
-   }
 }
-
-/// If we are in multimode, looks at the type of track and where we are on it to
-/// determine what object we are hovering over and hence what tool to use.
-/// @param pTtb - A pointer to the tools tool bar
-/// @param event - Mouse event, with info about position and what mouse buttons are down.
-int TrackPanel::DetermineToolToUse( ToolsToolBar * pTtb, const wxMouseEvent & event)
-{
-   int currentTool = pTtb->GetCurrentTool();
-
-   // Unless in Multimode keep using the current tool.
-   if( !pTtb->IsDown(multiTool) )
-      return currentTool;
-
-   // We NEVER change tools whilst we are dragging.
-   if( event.Dragging() || event.LeftUp() )
-      return currentTool;
-
-   // Just like dragging.
-   // But, this event might be the final button up
-   // so keep the same tool.
-//   if( mIsSliding || mIsSelecting || mIsEnveloping )
-   if( mMouseCapture != IsUncaptured )
-      return currentTool;
-
-   // So now we have to find out what we are near to..
-   const auto foundCell = FindCell(event.m_x, event.m_y);
-   auto &pTrack = foundCell.pTrack;
-   auto &rect = foundCell.rect;
-   if( !pTrack|| foundCell.type != CellType::Track )
-      return currentTool;
-
-   int trackKind = pTrack->GetKind();
-   currentTool = selectTool; // the default.
-
-   if( trackKind == Track::Label ){
-      currentTool = selectTool;
-   } else if( trackKind != Track::Wave) {
-      currentTool = selectTool;
-   // So we are in a wave track?  Not necessarily. 
-   // FIXME: Possibly not in wave track. Haven't checked Track::Note (#if defined(USE_MIDI)).
-   // From here on the order in which we hit test determines
-   // which tool takes priority in the rare cases where it
-   // could be more than one.
-   }
-
-   //Use the false argument since in multimode we don't
-   //want the button indicating which tool is in use to be updated.
-   pTtb->SetCurrentTool( currentTool, false );
-   return currentTool;
-}
-
-
-#ifdef USE_MIDI
-bool TrackPanel::HitTestStretch(Track *track, const wxRect &rect, const wxMouseEvent & event)
-{
-   // later, we may want a different policy, but for now, stretch is
-   // selected when the cursor is near the center of the track and
-   // within the selection
-   if (!track || !track->GetSelected() || track->GetKind() != Track::Note ||
-       IsUnsafe()) {
-      return false;
-   }
-   int center = rect.y + rect.height / 2;
-   int distance = abs(event.m_y - center);
-   const int yTolerance = 10;
-   wxInt64 leftSel = mViewInfo->TimeToPosition(mViewInfo->selectedRegion.t0(), rect.x);
-   wxInt64 rightSel = mViewInfo->TimeToPosition(mViewInfo->selectedRegion.t1(), rect.x);
-   // Something is wrong if right edge comes before left edge
-   wxASSERT(!(rightSel < leftSel));
-   return (leftSel <= event.m_x && event.m_x <= rightSel &&
-           distance < yTolerance);
-}
-#endif
 
 double TrackPanel::GetMostRecentXPos()
 {
@@ -3619,17 +1833,6 @@ void TrackPanel::DrawEverythingElse(wxDC * dc,
 
    if (mUIHandle)
       mUIHandle->DrawExtras(UIHandle::Panel, dc, region, clip);
-
-   // Draw snap guidelines if we have any
-   if (mSnapManager && (mSnapLeft >= 0 || mSnapRight >= 0)) {
-      AColor::SnapGuidePen(dc);
-      if (mSnapLeft >= 0) {
-         AColor::Line(*dc, (int)mSnapLeft, 0, mSnapLeft, 30000);
-      }
-      if (mSnapRight >= 0) {
-         AColor::Line(*dc, (int)mSnapRight, 0, mSnapRight, 30000);
-      }
-   }
 }
 
 // Make this #include go away!
@@ -3676,13 +1879,12 @@ void TrackPanel::DrawOutside(Track * t, wxDC * dc, const wxRect & rec,
 
    // Need to know which button, if any, to draw as pressed.
    const MouseCaptureEnum mouseCapture =
-      mMouseCapture ? mMouseCapture
       // This public global variable is a hack for now, which should go away
       // when TrackPanelCell gets a virtual function into which we move this
       // drawing code.  It's enough work for 2.1.2 just to move all the click and
       // drag code out of TrackPanel.  -- PRL
-      : MouseCaptureEnum(TrackControls::gCaptureState);
-   const bool captured = (t == mCapturedTrack || t == mpClickedTrack);
+      MouseCaptureEnum(TrackControls::gCaptureState);
+   const bool captured = (t == mpClickedTrack);
 
    mTrackInfo.DrawCloseBox(dc, rect, (captured && mouseCapture == IsClosing));
    mTrackInfo.DrawTitleBar(dc, rect, t, (captured && mouseCapture == IsPopping));

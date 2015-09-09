@@ -365,6 +365,11 @@ void NoteTrack::SetSequence(std::unique_ptr<Alg_seq> &&seq)
    mSeq = std::move(seq);
 }
 
+void NoteTrack::SwapSequence(NoteTrack &other)
+{
+   mSeq.swap(other.mSeq);
+}
+
 Alg_seq* NoteTrack::GetSequence()
 {
    return mSeq.get();

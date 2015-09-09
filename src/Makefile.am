@@ -563,6 +563,8 @@ audacity_SOURCES = \
 	tracks/notetrack/ui/NoteTrackUI.cpp \
 	tracks/notetrack/ui/NoteTrackVRulerControls.cpp \
 	tracks/notetrack/ui/NoteTrackVRulerControls.h \
+	tracks/notetrack/ui/StretchHandle.cpp \
+	tracks/notetrack/ui/StretchHandle.h \
 	tracks/timetrack/ui/TimeTrackControls.cpp \
 	tracks/timetrack/ui/TimeTrackControls.h \
 	tracks/timetrack/ui/TimeTrackUI.cpp \
@@ -582,6 +584,8 @@ audacity_SOURCES = \
 	tracks/ui/PlayIndicatorOverlay.h \
 	tracks/ui/Scrubbing.cpp \
 	tracks/ui/Scrubbing.h \
+	tracks/ui/SelectHandle.cpp \
+	tracks/ui/SelectHandle.h \
 	tracks/ui/SliderHandle.cpp \
 	tracks/ui/SliderHandle.h \
 	tracks/ui/TimeShiftHandle.cpp \
