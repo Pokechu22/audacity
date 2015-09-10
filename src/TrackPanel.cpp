@@ -1572,6 +1572,12 @@ void TrackPanel::HandleTrackSpecificMouseEvent(wxMouseEvent & event)
             mUIHandle = pCell->HitTest(TrackPanelMouseEvent(event, inner), GetProject()).handle;
       }
 
+      if (mUIHandle == NULL &&
+         pCell &&
+         (event.ButtonDown() || event.ButtonDClick()))
+         mUIHandle =
+         pCell->HitTest(TrackPanelMouseEvent(event, inner), GetProject()).handle;
+
       if (mUIHandle) {
          // UIHANDLE CLICK
          UIHandle::Result refreshResult =
@@ -1586,29 +1592,6 @@ void TrackPanel::HandleTrackSpecificMouseEvent(wxMouseEvent & event)
       if (mUIHandle) {
          HandleCursor(event);
          return;
-      }
-   }
-
-   // To do: remove the following special things
-   // so that we can coalesce the code for track and non-track clicks
-
-   bool handled = false;
-
-   if( !handled )
-   {
-      if (mUIHandle == NULL &&
-          pCell &&
-          (event.ButtonDown() || event.ButtonDClick()) &&
-          NULL != (mUIHandle =
-             pCell->HitTest(TrackPanelMouseEvent(event, inner), GetProject()).handle)) {
-         // UIHANDLE CLICK
-         UIHandle::Result refreshResult =
-            mUIHandle->Click(TrackPanelMouseEvent(event, inner, pCell), GetProject());
-         if (refreshResult & RefreshCode::Cancelled)
-            mUIHandle = NULL;
-         else
-            mpClickedTrack = pTrack;
-         ProcessUIHandleResult(this, mRuler, pTrack, pTrack, refreshResult);
       }
    }
 
