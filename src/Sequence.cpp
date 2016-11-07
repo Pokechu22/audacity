@@ -606,11 +606,7 @@ void Sequence::Paste(sampleCount s, const Sequence *src)
       for (i = 2; i < srcNumBlocks - 2; i++) {
          const SeqBlock &block = srcBlock[i];
          auto file = mDirManager->CopyBlockFile(block.f);
-         if (!file) {
-            wxASSERT(false); // TODO: Handle this better, alert the user of failure.
-            return false;
-         }
-
+         // We can assume file is not null
          newBlock.push_back(SeqBlock(file, block.start + s));
       }
 
@@ -737,11 +733,7 @@ bool Sequence::AppendBlock
       mDirManager.CopyBlockFile(b.f), // Bump ref count if not locked, else copy
       mNumSamples
    );
-   if (!newBlock.f) {
-      /// \todo Error Could not paste!  (Out of disk space?)
-      wxASSERT(false); // TODO: Handle this better, alert the user of failure.
-      return false;
-   }
+   // We can assume newBlock.f is not null
 
    //Don't need to Ref because it was done by CopyBlockFile, above...
    //mDirManager->Ref(newBlock.f);
