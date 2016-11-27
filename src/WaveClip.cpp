@@ -1546,8 +1546,8 @@ void WaveClip::Paste(double t0, const WaveClip* other)
          // Force sample formats to match.
          newClip->ConvertToSampleFormat(mSequence->GetSampleFormat());
       pastedClip = newClip.get();
-   } else
-   {
+   }
+   else {
       // No resampling or format change needed, just use original clip without making a copy
       pastedClip = other;
    }
@@ -1555,8 +1555,10 @@ void WaveClip::Paste(double t0, const WaveClip* other)
    sampleCount s0;
    TimeToSamplesClip(t0, &s0);
 
+   // use WEAK-GUARANTEE
    mSequence->Paste(s0, pastedClip->mSequence.get());
 
+   // use NOFAIL-GUARANTEE
    MarkChanged();
    mEnvelope->Paste(s0.as_double()/mRate + mOffset, pastedClip->mEnvelope.get());
    mEnvelope->RemoveUnneededPoints();
@@ -1566,6 +1568,8 @@ void WaveClip::Paste(double t0, const WaveClip* other)
    for (const auto &cutline: pastedClip->mCutLines)
    {
       mCutLines.push_back(
+         // construction may throw after partial work is done,
+         // therefore this function only gives a weak guarantee
          make_movable<WaveClip>
             ( *cutline, mSequence->GetDirManager(),
               // Recursively copy cutlines of cutlines.  They don't need
@@ -1573,8 +1577,6 @@ void WaveClip::Paste(double t0, const WaveClip* other)
               true));
       mCutLines.back()->Offset(t0 - mOffset);
    }
-
-   return true;
 }
 
 void WaveClip::InsertSilence(double t, double len)
