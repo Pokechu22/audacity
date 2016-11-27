@@ -104,7 +104,7 @@ class PROFILE_DLL_API Sequence final : public XMLTagHandler{
                        size_t len, const sampleCount *where);
 
    std::unique_ptr<Sequence> Copy(sampleCount s0, sampleCount s1) const;
-   bool Paste(sampleCount s0, const Sequence *src);
+   void Paste(sampleCount s0, const Sequence *src);
 
    size_t GetIdealAppendLen() const;
    bool Append(samplePtr buffer, sampleFormat format, size_t len,

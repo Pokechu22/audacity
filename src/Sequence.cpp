@@ -72,9 +72,7 @@ Sequence::Sequence(const Sequence &orig, const std::shared_ptr<DirManager> &proj
    , mMinSamples(orig.mMinSamples)
    , mMaxSamples(orig.mMaxSamples)
 {
-   bool bResult = Paste(0, &orig);
-   wxASSERT(bResult); // TO DO: Actually handle this.
-   (void)bResult;
+   Paste(0, &orig);
 }
 
 Sequence::~Sequence()
@@ -450,7 +448,8 @@ namespace {
    }
 }
 
-bool Sequence::Paste(sampleCount s, const Sequence *src)
+void Sequence::Paste(sampleCount s, const Sequence *src)
+// STRONG-GUARANTEE
 {
    if ((s < 0) || (s > mNumSamples))
    {
@@ -459,8 +458,8 @@ bool Sequence::Paste(sampleCount s, const Sequence *src)
          // PRL:  Why bother with Internat when the above is just wxT?
          Internat::ToString(s.as_double(), 0).c_str(),
          Internat::ToString(mNumSamples.as_double(), 0).c_str());
-      wxASSERT(false);
-      return false;
+      //THROW_INCONSISTENCY_EXCEPTION
+      ;
    }
 
    // Quick check to make sure that it doesn't overflow
@@ -471,8 +470,8 @@ bool Sequence::Paste(sampleCount s, const Sequence *src)
          // PRL:  Why bother with Internat when the above is just wxT?
          Internat::ToString(mNumSamples.as_double(), 0).c_str(),
          Internat::ToString(src->mNumSamples.as_double(), 0).c_str());
-      wxASSERT(false);
-      return false;
+      //THROW_INCONSISTENCY_EXCEPTION
+      ;
    }
 
    if (src->mSampleFormat != mSampleFormat)
@@ -480,8 +479,8 @@ bool Sequence::Paste(sampleCount s, const Sequence *src)
       wxLogError(
          wxT("Sequence::Paste: Sample format to be pasted, %s, does not match destination format, %s."),
          GetSampleFormatStr(src->mSampleFormat), GetSampleFormatStr(src->mSampleFormat));
-      wxASSERT(false);
-      return false;
+      //THROW_INCONSISTENCY_EXCEPTION
+      ;
    }
 
    const BlockArray &srcBlock = src->mBlock;
@@ -490,7 +489,7 @@ bool Sequence::Paste(sampleCount s, const Sequence *src)
    auto sampleSize = SAMPLE_SIZE(mSampleFormat);
 
    if (addedLen == 0 || srcNumBlocks == 0)
-      return true;
+      return;
 
    const size_t numBlocks = mBlock.size();
 
@@ -500,12 +499,18 @@ bool Sequence::Paste(sampleCount s, const Sequence *src)
       // onto the end because the current last block is longer than the
       // minimum size
 
+      // Build and swap a copy so there is a strong exception safety guarantee
+      BlockArray newBlock{ mBlock };
+      sampleCount samples = mNumSamples;
       for (unsigned int i = 0; i < srcNumBlocks; i++)
-         AppendBlock(*mDirManager, mBlock, mNumSamples, srcBlock[i]);
+         // AppendBlock may throw for limited disk space, if pasting from
+         // one project into another.
+         AppendBlock(*mDirManager, newBlock, samples, srcBlock[i]);
          // Increase ref count or duplicate file
 
-      ConsistencyCheck(wxT("Paste branch one"));
-      return true;
+      CommitChangesIfConsistent
+         (newBlock, samples, wxT("Paste branch one"));
+      return;
    }
 
    const int b = (s == mNumSamples) ? mBlock.size() - 1 : FindBlock(s);
@@ -540,6 +545,10 @@ bool Sequence::Paste(sampleCount s, const Sequence *src)
             // largerBlockLen is not more than mMaxSamples...
             buffer.ptr(), largerBlockLen.as_size_t(), mSampleFormat);
 
+      // Don't make a duplicate array.  We can still give STRONG-GUARANTEE
+      // if we modify only one block in place.
+
+      // use NOFAIL-GUARANTEE in remaining steps
       block.f = file;
 
       for (unsigned int i = b + 1; i < numBlocks; i++)
@@ -547,8 +556,10 @@ bool Sequence::Paste(sampleCount s, const Sequence *src)
 
       mNumSamples += addedLen;
 
-      ConsistencyCheck(wxT("Paste branch two"));
-      return true;
+      // This consistency check won't throw, it asserts.
+      // Proof that we kept consistency is not hard.
+      ConsistencyCheck(wxT("Paste branch two"), false);
+      return;
    }
 
    // Case three: if we are inserting four or fewer blocks,
@@ -636,12 +647,8 @@ bool Sequence::Paste(sampleCount s, const Sequence *src)
    for (i = b + 1; i < numBlocks; i++)
       newBlock.push_back(mBlock[i].Plus(addedLen));
 
-   mBlock.swap(newBlock);
-
-   mNumSamples += addedLen;
-
-   ConsistencyCheck(wxT("Paste branch three"));
-   return true;
+   CommitChangesIfConsistent
+      (newBlock, mNumSamples + addedLen, wxT("Paste branch three"));
 }
 
 bool Sequence::SetSilence(sampleCount s0, sampleCount len)
@@ -692,11 +699,9 @@ bool Sequence::InsertSilence(sampleCount s0, sampleCount len)
 
    sTrack.mNumSamples = pos;
 
-   bool bResult = Paste(s0, &sTrack);
-   wxASSERT(bResult);
+   Paste(s0, &sTrack);
 
-   ConsistencyCheck(wxT("InsertSilence"));
-   return bResult;
+   return true;
 }
 
 bool Sequence::AppendAlias(const wxString &fullPath,

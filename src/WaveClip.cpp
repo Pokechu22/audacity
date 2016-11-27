@@ -1567,30 +1567,26 @@ void WaveClip::Paste(double t0, const WaveClip* other)
    sampleCount s0;
    TimeToSamplesClip(t0, &s0);
 
-   bool result = false;
-   if (mSequence->Paste(s0, pastedClip->mSequence.get()))
+   mSequence->Paste(s0, pastedClip->mSequence.get());
+
+   MarkChanged();
+   mEnvelope->Paste(s0.as_double()/mRate + mOffset, pastedClip->mEnvelope.get());
+   mEnvelope->RemoveUnneededPoints();
+   OffsetCutLines(t0, pastedClip->GetEndTime() - pastedClip->GetStartTime());
+
+   // Paste cut lines contained in pasted clip
+   for (const auto &cutline: pastedClip->mCutLines)
    {
-      MarkChanged();
-      mEnvelope->Paste(s0.as_double()/mRate + mOffset, pastedClip->mEnvelope.get());
-      mEnvelope->RemoveUnneededPoints();
-      OffsetCutLines(t0, pastedClip->GetEndTime() - pastedClip->GetStartTime());
-
-      // Paste cut lines contained in pasted clip
-      for (const auto &cutline: pastedClip->mCutLines)
-      {
-         mCutLines.push_back(
-            make_movable<WaveClip>
-               ( *cutline, mSequence->GetDirManager(),
-                 // Recursively copy cutlines of cutlines.  They don't need
-                 // their offsets adjusted.
-                 true));
-         mCutLines.back()->Offset(t0 - mOffset);
-      }
-
-      result = true;
+      mCutLines.push_back(
+         make_movable<WaveClip>
+            ( *cutline, mSequence->GetDirManager(),
+              // Recursively copy cutlines of cutlines.  They don't need
+              // their offsets adjusted.
+              true));
+      mCutLines.back()->Offset(t0 - mOffset);
    }
 
-   return result;
+   return true;
 }
 
 bool WaveClip::InsertSilence(double t, double len)
