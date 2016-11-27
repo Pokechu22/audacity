@@ -1589,22 +1589,20 @@ void WaveClip::Paste(double t0, const WaveClip* other)
    return true;
 }
 
-bool WaveClip::InsertSilence(double t, double len)
+void WaveClip::InsertSilence(double t, double len)
+// STRONG-GUARANTEE
 {
    sampleCount s0;
    TimeToSamplesClip(t, &s0);
    auto slen = (sampleCount)floor(len * mRate + 0.5);
 
-   if (!GetSequence()->InsertSilence(s0, slen))
-   {
-      wxASSERT(false);
-      return false;
-   }
+   // use STRONG-GUARANTEE
+   GetSequence()->InsertSilence(s0, slen);
+
+   // use NOFAIL-GUARANTEE
    OffsetCutLines(t, len);
    GetEnvelope()->InsertSpace(t, len);
    MarkChanged();
-
-   return true;
 }
 
 bool WaveClip::Clear(double t0, double t1)

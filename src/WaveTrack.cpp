@@ -692,15 +692,9 @@ Track::Holder WaveTrack::Copy(double t0, double t1, bool forClipboard) const
             newTrack->GetSampleFormat(),
             static_cast<int>(newTrack->GetRate()));
       placeholder->SetIsPlaceholder(true);
-      if ( ! placeholder->InsertSilence(
-               0, (t1 - t0) - newTrack->GetEndTime()) )
-      {
-      }
-      else
-      {
-         placeholder->Offset(newTrack->GetEndTime());
-         newTrack->mClips.push_back(std::move(placeholder)); // transfer ownership
-      }
+      placeholder->InsertSilence(0, (t1 - t0) - newTrack->GetEndTime());
+      placeholder->Offset(newTrack->GetEndTime());
+      newTrack->mClips.push_back(std::move(placeholder)); // transfer ownership
    }
 
    return result;
@@ -1405,7 +1399,8 @@ bool WaveTrack::InsertSilence(double t, double len)
    {
       // Special case if there is no clip yet
       WaveClip* clip = CreateClip();
-      return clip->InsertSilence(0, len);
+      clip->InsertSilence(0, len);
+      return true;
    }
 
    for (const auto &clip : mClips)
@@ -1413,11 +1408,7 @@ bool WaveTrack::InsertSilence(double t, double len)
       if (clip->BeforeClip(t))
          clip->Offset(len);
       else if (clip->WithinClip(t))
-      {
-         if (!clip->InsertSilence(t, len)) {
-            return false;
-         }
-      }
+         clip->InsertSilence(t, len);
    }
 
    return true;
@@ -1541,9 +1532,7 @@ bool WaveTrack::Join(double t0, double t1)
       if (clip->GetOffset() - t > (1.0 / mRate)) {
          double addedSilence = (clip->GetOffset() - t);
          //printf("Adding %.6f seconds of silence\n");
-         bool bResult = newClip->InsertSilence(t, addedSilence);
-         wxASSERT(bResult); // TO DO: Actually handle this.
-         wxUnusedVar(bResult);
+         newClip->InsertSilence(t, addedSilence);
          t += addedSilence;
       }
 

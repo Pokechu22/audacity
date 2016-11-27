@@ -318,7 +318,7 @@ public:
 
    /** Insert silence - note that this is an efficient operation for large
     * amounts of silence */
-   bool InsertSilence(double t, double len);
+   void InsertSilence(double t, double len);
 
    /// Get access to cut lines list
    WaveClipHolders &GetCutLines() { return mCutLines; }
