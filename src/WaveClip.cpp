@@ -1611,57 +1611,54 @@ bool WaveClip::Clear(double t0, double t1)
    TimeToSamplesClip(t0, &s0);
    TimeToSamplesClip(t1, &s1);
 
-   if (GetSequence()->Delete(s0, s1-s0))
+   GetSequence()->Delete(s0, s1-s0);
+
+   // msmeyer
+   //
+   // Delete all cutlines that are within the given area, if any.
+   //
+   // Note that when cutlines are active, two functions are used:
+   // Clear() and ClearAndAddCutLine(). ClearAndAddCutLine() is called
+   // whenever the user directly calls a command that removes some audio, e.g.
+   // "Cut" or "Clear" from the menu. This command takes care about recursive
+   // preserving of cutlines within clips. Clear() is called when internal
+   // operations want to remove audio. In the latter case, it is the right
+   // thing to just remove all cutlines within the area.
+   //
+   double clip_t0 = t0;
+   double clip_t1 = t1;
+   if (clip_t0 < GetStartTime())
+      clip_t0 = GetStartTime();
+   if (clip_t1 > GetEndTime())
+      clip_t1 = GetEndTime();
+
+   // May DELETE as we iterate, so don't use range-for
+   for (auto it = mCutLines.begin(); it != mCutLines.end();)
    {
-      // msmeyer
-      //
-      // Delete all cutlines that are within the given area, if any.
-      //
-      // Note that when cutlines are active, two functions are used:
-      // Clear() and ClearAndAddCutLine(). ClearAndAddCutLine() is called
-      // whenever the user directly calls a command that removes some audio, e.g.
-      // "Cut" or "Clear" from the menu. This command takes care about recursive
-      // preserving of cutlines within clips. Clear() is called when internal
-      // operations want to remove audio. In the latter case, it is the right
-      // thing to just remove all cutlines within the area.
-      //
-      double clip_t0 = t0;
-      double clip_t1 = t1;
-      if (clip_t0 < GetStartTime())
-         clip_t0 = GetStartTime();
-      if (clip_t1 > GetEndTime())
-         clip_t1 = GetEndTime();
-
-      // May DELETE as we iterate, so don't use range-for
-      for (auto it = mCutLines.begin(); it != mCutLines.end();)
+      WaveClip* clip = it->get();
+      double cutlinePosition = mOffset + clip->GetOffset();
+      if (cutlinePosition >= t0 && cutlinePosition <= t1)
       {
-         WaveClip* clip = it->get();
-         double cutlinePosition = mOffset + clip->GetOffset();
-         if (cutlinePosition >= t0 && cutlinePosition <= t1)
-         {
-            // This cutline is within the area, DELETE it
-            it = mCutLines.erase(it);
-         }
-         else
-         {
-            if (cutlinePosition >= t1)
-            {
-               clip->Offset(clip_t0 - clip_t1);
-            }
-            ++it;
-         }
+         // This cutline is within the area, DELETE it
+         it = mCutLines.erase(it);
       }
-
-      // Collapse envelope
-      GetEnvelope()->CollapseRegion(t0, t1);
-      if (t0 < GetStartTime())
-         Offset(-(GetStartTime() - t0));
-
-      MarkChanged();
-      return true;
+      else
+      {
+         if (cutlinePosition >= t1)
+         {
+            clip->Offset(clip_t0 - clip_t1);
+         }
+         ++it;
+      }
    }
 
-   return false;
+   // Collapse envelope
+   GetEnvelope()->CollapseRegion(t0, t1);
+   if (t0 < GetStartTime())
+      Offset(-(GetStartTime() - t0));
+
+   MarkChanged();
+   return true;
 }
 
 bool WaveClip::ClearAndAddCutLine(double t0, double t1)
@@ -1702,20 +1699,17 @@ bool WaveClip::ClearAndAddCutLine(double t0, double t1)
    TimeToSamplesClip(t0, &s0);
    TimeToSamplesClip(t1, &s1);
 
-   if (GetSequence()->Delete(s0, s1-s0))
-   {
-      // Collapse envelope
-      GetEnvelope()->CollapseRegion(t0, t1);
-      if (t0 < GetStartTime())
-         Offset(-(GetStartTime() - t0));
+   GetSequence()->Delete(s0, s1-s0);
 
-      MarkChanged();
+   // Collapse envelope
+   GetEnvelope()->CollapseRegion(t0, t1);
+   if (t0 < GetStartTime())
+      Offset(-(GetStartTime() - t0));
 
-      mCutLines.push_back(std::move(newClip));
-      return true;
-   }
-   else
-      return false;
+   MarkChanged();
+
+   mCutLines.push_back(std::move(newClip));
+   return true;
 }
 
 bool WaveClip::FindCutLine(double cutLinePosition,
