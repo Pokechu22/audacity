@@ -1378,11 +1378,7 @@ bool WaveTrack::Silence(double t0, double t1)
             startDelta = 0;
          }
 
-         if (!clip->GetSequence()->SetSilence(inclipDelta, samplesToCopy))
-         {
-            wxASSERT(false); // should always work
-            return false;
-         }
+         clip->GetSequence()->SetSilence(inclipDelta, samplesToCopy);
          clip->MarkChanged();
       }
    }
@@ -2078,15 +2074,11 @@ bool WaveTrack::Set(samplePtr buffer, sampleFormat format,
             // samplesToCopy is positive and not more than len
          }
 
-         if (!clip->SetSamples(
+         clip->SetSamples(
                (samplePtr)(((char*)buffer) +
                            startDelta.as_size_t() *
                            SAMPLE_SIZE(format)),
-               format, inclipDelta, samplesToCopy.as_size_t() ))
-         {
-            wxASSERT(false); // should always work
-            return false;
-         }
+                          format, inclipDelta, samplesToCopy.as_size_t() );
          clip->MarkChanged();
       }
    }

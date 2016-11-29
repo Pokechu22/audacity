@@ -252,7 +252,7 @@ public:
 
    bool GetSamples(samplePtr buffer, sampleFormat format,
                    sampleCount start, size_t len, bool mayThrow = true) const;
-   bool SetSamples(samplePtr buffer, sampleFormat format,
+   void SetSamples(samplePtr buffer, sampleFormat format,
                    sampleCount start, size_t len);
 
    Envelope* GetEnvelope() { return mEnvelope.get(); }

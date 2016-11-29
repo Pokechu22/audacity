@@ -406,12 +406,13 @@ bool WaveClip::GetSamples(samplePtr buffer, sampleFormat format,
    return mSequence->Get(buffer, format, start, len, mayThrow);
 }
 
-bool WaveClip::SetSamples(samplePtr buffer, sampleFormat format,
+void WaveClip::SetSamples(samplePtr buffer, sampleFormat format,
                    sampleCount start, size_t len)
+// STRONG-GUARANTEE
 {
-   bool bResult = mSequence->Set(buffer, format, start, len);
+   mSequence->SetSamples(buffer, format, start, len);
+   // use NOFAIL-GUARANTEE
    MarkChanged();
-   return bResult;
 }
 
 BlockArray* WaveClip::GetSequenceBlockArray()
