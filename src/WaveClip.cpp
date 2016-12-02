@@ -1389,11 +1389,8 @@ bool WaveClip::Append(samplePtr buffer, sampleFormat format,
 
    for(;;) {
       if (mAppendBufferLen >= blockSize) {
-         bool success =
-            mSequence->Append(mAppendBuffer.ptr(), seqFormat, blockSize,
-                              blockFileLog);
-         if (!success)
-            return false;
+         mSequence->Append(mAppendBuffer.ptr(), seqFormat, blockSize,
+                           blockFileLog);
          memmove(mAppendBuffer.ptr(),
                  mAppendBuffer.ptr() + blockSize * SAMPLE_SIZE(seqFormat),
                  (mAppendBufferLen - blockSize) * SAMPLE_SIZE(seqFormat));
@@ -1428,25 +1425,19 @@ bool WaveClip::Append(samplePtr buffer, sampleFormat format,
 bool WaveClip::AppendAlias(const wxString &fName, sampleCount start,
                             size_t len, int channel,bool useOD)
 {
-   bool result = mSequence->AppendAlias(fName, start, len, channel,useOD);
-   if (result)
-   {
-      UpdateEnvelopeTrackLen();
-      MarkChanged();
-   }
-   return result;
+   mSequence->AppendAlias(fName, start, len, channel,useOD);
+   UpdateEnvelopeTrackLen();
+   MarkChanged();
+   return true;
 }
 
 bool WaveClip::AppendCoded(const wxString &fName, sampleCount start,
                             size_t len, int channel, int decodeType)
 {
-   bool result = mSequence->AppendCoded(fName, start, len, channel, decodeType);
-   if (result)
-   {
-      UpdateEnvelopeTrackLen();
-      MarkChanged();
-   }
-   return result;
+   mSequence->AppendCoded(fName, start, len, channel, decodeType);
+   UpdateEnvelopeTrackLen();
+   MarkChanged();
+   return true;
 }
 
 bool WaveClip::Flush()
@@ -1457,17 +1448,15 @@ bool WaveClip::Flush()
 
    bool success = true;
    if (mAppendBufferLen > 0) {
-      success = mSequence->Append(mAppendBuffer.ptr(), mSequence->GetSampleFormat(), mAppendBufferLen);
-      if (success) {
-         mAppendBufferLen = 0;
-         UpdateEnvelopeTrackLen();
-         MarkChanged();
-      }
+      mSequence->Append(mAppendBuffer.ptr(), mSequence->GetSampleFormat(), mAppendBufferLen);
+      mAppendBufferLen = 0;
+      UpdateEnvelopeTrackLen();
+      MarkChanged();
    }
 
    //wxLogDebug(wxT("now sample count %lli"), (long long) mSequence->GetNumSamples());
 
-   return success;
+   return true;
 }
 
 bool WaveClip::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
@@ -1862,12 +1851,8 @@ void WaveClip::Resample(int rate, ProgressDialog *progress)
          break;
       }
 
-      if (!newSequence->Append((samplePtr)outBuffer.get(), floatSample,
-                               outGenerated))
-      {
-         error = true;
-         break;
-      }
+      newSequence->Append((samplePtr)outBuffer.get(), floatSample,
+                          outGenerated);
 
       if (progress)
       {

@@ -688,13 +688,15 @@ void Sequence::InsertSilence(sampleCount s0, sampleCount len)
    Paste(s0, &sTrack);
 }
 
-bool Sequence::AppendAlias(const wxString &fullPath,
+void Sequence::AppendAlias(const wxString &fullPath,
                            sampleCount start,
                            size_t len, int channel, bool useOD)
+// STRONG-GUARANTEE
 {
    // Quick check to make sure that it doesn't overflow
    if (Overflows((mNumSamples.as_double()) + ((double)len)))
-      return false;
+      //THROW_INCONSISTENCY_EXCEPTION
+      ;
 
    SeqBlock newBlock(
       useOD?
@@ -704,16 +706,16 @@ bool Sequence::AppendAlias(const wxString &fullPath,
    );
    mBlock.push_back(newBlock);
    mNumSamples += len;
-
-   return true;
 }
 
-bool Sequence::AppendCoded(const wxString &fName, sampleCount start,
+void Sequence::AppendCoded(const wxString &fName, sampleCount start,
                             size_t len, int channel, int decodeType)
+// STRONG-GUARANTEE
 {
    // Quick check to make sure that it doesn't overflow
    if (Overflows((mNumSamples.as_double()) + ((double)len)))
-      return false;
+      //THROW_INCONSISTENCY_EXCEPTION
+      ;
 
    SeqBlock newBlock(
       mDirManager->NewODDecodeBlockFile(fName, start, len, channel, decodeType),
@@ -721,8 +723,6 @@ bool Sequence::AppendCoded(const wxString &fName, sampleCount start,
    );
    mBlock.push_back(newBlock);
    mNumSamples += len;
-
-   return true;
 }
 
 bool Sequence::AppendBlock
@@ -1519,22 +1519,32 @@ size_t Sequence::GetIdealAppendLen() const
       return max - lastBlockLen;
 }
 
-bool Sequence::Append(samplePtr buffer, sampleFormat format,
+void Sequence::Append(samplePtr buffer, sampleFormat format,
                       size_t len, XMLWriter* blockFileLog /*=NULL*/)
+// STRONG-GUARANTEE
 {
+   if (len == 0)
+      return;
+
    // Quick check to make sure that it doesn't overflow
    if (Overflows(mNumSamples.as_double() + ((double)len)))
-      return false;
+      //THROW_INCONSISTENCY_EXCEPTION
+      ;
+
+   BlockArray newBlock;
+   sampleCount newNumSamples = mNumSamples;
 
    // If the last block is not full, we need to add samples to it
    int numBlocks = mBlock.size();
    SeqBlock *pLastBlock;
    decltype(pLastBlock->f->GetLength()) length;
    SampleBuffer buffer2(mMaxSamples, mSampleFormat);
+   bool replaceLast = false;
    if (numBlocks > 0 &&
        (length =
         (pLastBlock = &mBlock.back())->f->GetLength()) < mMinSamples) {
-      SeqBlock &lastBlock = *pLastBlock;
+      // Enlarge a sub-minimum block at the end
+      const SeqBlock &lastBlock = *pLastBlock;
       const auto addLen = std::min(mMaxSamples - length, len);
 
       Read(buffer2.ptr(), mSampleFormat, lastBlock, 0, length, true);
@@ -1545,11 +1555,13 @@ bool Sequence::Append(samplePtr buffer, sampleFormat format,
                   mSampleFormat,
                   addLen);
 
-      const int newLastBlockLen = length + addLen;
+      const auto newLastBlockLen = length + addLen;
 
       SeqBlock newLastBlock(
-         mDirManager->NewSimpleBlockFile(buffer2.ptr(), newLastBlockLen, mSampleFormat,
-            blockFileLog != NULL),
+         mDirManager->NewSimpleBlockFile(
+            buffer2.ptr(), newLastBlockLen, mSampleFormat,
+            blockFileLog != NULL
+         ),
          lastBlock.start
       );
 
@@ -1558,37 +1570,42 @@ bool Sequence::Append(samplePtr buffer, sampleFormat format,
          static_cast< SimpleBlockFile * >( &*newLastBlock.f )
             ->SaveXML( *blockFileLog );
 
-      lastBlock = newLastBlock;
+      newBlock.push_back( newLastBlock );
 
       len -= addLen;
-      mNumSamples += addLen;
+      newNumSamples += addLen;
       buffer += addLen * SAMPLE_SIZE(format);
+
+      replaceLast = true;
    }
    // Append the rest as NEW blocks
    while (len) {
       const auto idealSamples = GetIdealBlockSize();
-      const auto l = std::min(idealSamples, len);
+      const auto addedLen = std::min(idealSamples, len);
       BlockFilePtr pFile;
       if (format == mSampleFormat) {
-         pFile = mDirManager->NewSimpleBlockFile(buffer, l, mSampleFormat,
-                                                blockFileLog != NULL);
+         pFile = mDirManager->NewSimpleBlockFile(
+            buffer, addedLen, mSampleFormat, blockFileLog != NULL);
       }
       else {
-         CopySamples(buffer, format, buffer2.ptr(), mSampleFormat, l);
-         pFile = mDirManager->NewSimpleBlockFile(buffer2.ptr(), l, mSampleFormat,
-                                                blockFileLog != NULL);
+         CopySamples(buffer, format, buffer2.ptr(), mSampleFormat, addedLen);
+         pFile = mDirManager->NewSimpleBlockFile(
+            buffer2.ptr(), addedLen, mSampleFormat, blockFileLog != NULL);
       }
 
       if (blockFileLog)
          // shouldn't throw, because XMLWriter is not XMLFileWriter
          static_cast< SimpleBlockFile * >( &*pFile )->SaveXML( *blockFileLog );
 
-      mBlock.push_back(SeqBlock(pFile, mNumSamples));
+      newBlock.push_back(SeqBlock(pFile, mNumSamples));
 
-      buffer += l * SAMPLE_SIZE(format);
-      mNumSamples += l;
-      len -= l;
+      buffer += addedLen * SAMPLE_SIZE(format);
+      newNumSamples += addedLen;
+      len -= addedLen;
    }
+
+   AppendBlocksIfConsistent(mBlock, newBlock, replaceLast,
+                            newNumSamples, wxT("Append"));
 
 // JKC: During generate we use Append again and again.
 // If generating a long sequence this test would give O(n^2)
@@ -1596,8 +1613,6 @@ bool Sequence::Append(samplePtr buffer, sampleFormat format,
 #ifdef VERY_SLOW_CHECKING
    ConsistencyCheck(wxT("Append"));
 #endif
-
-   return true;
 }
 
 void Sequence::Blockify
@@ -1867,7 +1882,7 @@ void Sequence::CommitChangesIfConsistent
 }
 
 void Sequence::AppendBlocksIfConsistent
-(BlockArray &mBlock, BlockArray &additionalBlocks,
+(BlockArray &mBlock, BlockArray &additionalBlocks, bool replaceLast,
  sampleCount numSamples, const wxChar *whereStr)
 {
    // Any additional blocks are meant to be appended,
@@ -1876,7 +1891,7 @@ void Sequence::AppendBlocksIfConsistent
    bool tmpValid = false;
    SeqBlock tmp;
 
-   if ( ! mBlock.empty() ) {
+   if ( replaceLast && ! mBlock.empty() ) {
       tmp = mBlock.back(), tmpValid = true;
       mBlock.pop_back();
    }
