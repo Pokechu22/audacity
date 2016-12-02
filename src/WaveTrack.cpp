@@ -1321,7 +1321,8 @@ bool WaveTrack::Paste(double t0, const Track *src)
             }
          }
 
-         return insideClip->Paste(t0, other->GetClipByIndex(0));
+         insideClip->Paste(t0, other->GetClipByIndex(0));
+         return true;
       }
 
       // Just fall through and exhibit NEW behaviour
@@ -1547,9 +1548,7 @@ bool WaveTrack::Join(double t0, double t1)
       }
 
       //printf("Pasting at %.6f\n", t);
-      bool bResult = newClip->Paste(t, clip);
-      wxASSERT(bResult); // TO DO: Actually handle this.
-      wxUnusedVar(bResult);
+      newClip->Paste(t, clip);
       t = newClip->GetEndTime();
 
       auto it = FindClip(mClips, clip);
@@ -2523,8 +2522,7 @@ bool WaveTrack::MergeClips(int clipidx1, int clipidx2)
       return false;
 
    // Append data from second clip to first clip
-   if (!clip1->Paste(clip1->GetEndTime(), clip2))
-      return false;
+   clip1->Paste(clip1->GetEndTime(), clip2);
 
    // Delete second clip
    auto it = FindClip(mClips, clip2);
@@ -2533,20 +2531,14 @@ bool WaveTrack::MergeClips(int clipidx1, int clipidx2)
    return true;
 }
 
-bool WaveTrack::Resample(int rate, ProgressDialog *progress)
+void WaveTrack::Resample(int rate, ProgressDialog *progress)
+// WEAK-GUARANTEE
+// Partial completion may leave clips at differing sample rates!
 {
    for (const auto &clip : mClips)
-      if (!clip->Resample(rate, progress))
-      {
-         wxLogDebug( wxT("Resampling problem!  We're partially resampled") );
-         // FIXME: The track is now in an inconsistent state since some
-         //        clips are resampled and some are not
-         return false;
-      }
+      clip->Resample(rate, progress);
 
    mRate = rate;
-
-   return true;
 }
 
 namespace {

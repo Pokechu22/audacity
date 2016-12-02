@@ -7225,8 +7225,7 @@ void AudacityProject::OnResample()
          // But the thrown exception will cause rollback in the application
          // level handler.
 
-         if (!((WaveTrack*)t)->Resample(newRate, &progress))
-            break;
+         ((WaveTrack*)t)->Resample(newRate, &progress);
 
          // Each time a track is successfully, completely resampled,
          // commit that to the undo stack.  The second and later times,

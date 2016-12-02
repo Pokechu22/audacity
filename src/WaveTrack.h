@@ -505,7 +505,7 @@ class AUDACITY_DLL_API WaveTrack final : public Track {
    void Merge(const Track &orig) override;
 
    // Resample track (i.e. all clips in the track)
-   bool Resample(int rate, ProgressDialog *progress = NULL);
+   void Resample(int rate, ProgressDialog *progress = NULL);
 
    //
    // AutoSave related

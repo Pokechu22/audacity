@@ -1538,7 +1538,8 @@ void WaveClip::WriteXML(XMLWriter &xmlFile) const
    xmlFile.EndTag(wxT("waveclip"));
 }
 
-bool WaveClip::Paste(double t0, const WaveClip* other)
+void WaveClip::Paste(double t0, const WaveClip* other)
+// WEAK-GUARANTEE
 {
    const bool clipNeedsResampling = other->mRate != mRate;
    const bool clipNeedsNewFormat =
@@ -1552,8 +1553,7 @@ bool WaveClip::Paste(double t0, const WaveClip* other)
          std::make_unique<WaveClip>(*other, mSequence->GetDirManager(), true);
       if (clipNeedsResampling)
          // The other clip's rate is different from ours, so resample
-         if (!newClip->Resample(mRate))
-            return false;
+         newClip->Resample(mRate);
       if (clipNeedsNewFormat)
          // Force sample formats to match.
          newClip->ConvertToSampleFormat(mSequence->GetSampleFormat());
@@ -1751,8 +1751,7 @@ bool WaveClip::ExpandCutLine(double cutLinePosition)
       WaveClip *const cutline = it->get();
       if (fabs(mOffset + cutline->GetOffset() - cutLinePosition) < 0.0001)
       {
-         if (!Paste(mOffset+cutline->GetOffset(), cutline))
-            return false;
+         Paste(mOffset+cutline->GetOffset(), cutline);
          // Now erase the cutline,
          // but be careful to find it again, because Paste above may
          // have modified the array of cutlines (if our cutline contained
@@ -1824,13 +1823,14 @@ void WaveClip::SetRate(int rate)
    MarkChanged();
 }
 
-bool WaveClip::Resample(int rate, ProgressDialog *progress)
+void WaveClip::Resample(int rate, ProgressDialog *progress)
+// STRONG-GUARANTEE
 {
    // Note:  it is not necessary to do this recursively to cutlines.
    // They get resampled as needed when they are expanded.
 
    if (rate == mRate)
-      return true; // Nothing to do
+      return; // Nothing to do
 
    double factor = (double)rate / (double)mRate;
    ::Resample resample(true, factor, factor); // constant rate resampling
@@ -1890,22 +1890,21 @@ bool WaveClip::Resample(int rate, ProgressDialog *progress)
          );
          error = (updateResult != ProgressResult::Success);
          if (error)
-         {
             break;
-         }
+            //throw UserException{};
       }
    }
 
-   if (!error)
+   if (error)
+      ;
+   else
    {
-      mSequence = std::move(newSequence);
-      mRate = rate;
-
       // Invalidate wave display cache
       mWaveCache = std::make_unique<WaveCache>();
       // Invalidate the spectrum display cache
       mSpecCache = std::make_unique<SpecCache>();
-   }
 
-   return !error;
+      mSequence = std::move(newSequence);
+      mRate = rate;
+   }
 }

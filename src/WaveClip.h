@@ -232,7 +232,7 @@ public:
 
    // Resample clip. This also will set the rate, but without changing
    // the length of the clip
-   bool Resample(int rate, ProgressDialog *progress = NULL);
+   void Resample(int rate, ProgressDialog *progress = NULL);
 
    void SetOffset(double offset);
    double GetOffset() const { return mOffset; }
@@ -314,7 +314,7 @@ public:
    bool ClearAndAddCutLine(double t0, double t1);
 
    /// Paste data from other clip, resampling it if not equal rate
-   bool Paste(double t0, const WaveClip* other);
+   void Paste(double t0, const WaveClip* other);
 
    /** Insert silence - note that this is an efficient operation for large
     * amounts of silence */
