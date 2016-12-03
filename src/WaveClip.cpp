@@ -395,6 +395,7 @@ WaveClip::~WaveClip()
 }
 
 void WaveClip::SetOffset(double offset)
+// NOFAIL-GUARANTEE
 {
     mOffset = offset;
     mEnvelope->SetOffset(mOffset);
@@ -1664,6 +1665,9 @@ bool WaveClip::Clear(double t0, double t1)
 }
 
 bool WaveClip::ClearAndAddCutLine(double t0, double t1)
+// WEAK-GUARANTEE
+// this WaveClip remains destructible in case of AudacityException.
+// But some cutlines may be deleted
 {
    if (t0 > GetEndTime() || t1 < GetStartTime())
       return true; // time out of bounds
@@ -1671,10 +1675,10 @@ bool WaveClip::ClearAndAddCutLine(double t0, double t1)
    const double clip_t0 = std::max( t0, GetStartTime() );
    const double clip_t1 = std::min( t1, GetEndTime() );
 
-   auto newClip = make_movable<WaveClip>
+   auto newClip = make_movable< WaveClip >
       (*this, mSequence->GetDirManager(), true, clip_t0, clip_t1);
 
-   newClip->SetOffset(clip_t0-mOffset);
+   newClip->SetOffset( clip_t0 - mOffset );
 
    // Remove cutlines from this clip that were in the selection, shift
    // left those that were after the selection
@@ -1701,7 +1705,9 @@ bool WaveClip::ClearAndAddCutLine(double t0, double t1)
    TimeToSamplesClip(t0, &s0);
    TimeToSamplesClip(t1, &s1);
 
+   // use WEAK-GUARANTEE
    GetSequence()->Delete(s0, s1-s0);
+
 
    // Collapse envelope
    GetEnvelope()->CollapseRegion(t0, t1);

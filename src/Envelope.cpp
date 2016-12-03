@@ -997,6 +997,7 @@ int Envelope::Insert(double when, double value)
 // Control
 
 void Envelope::SetOffset(double newOffset)
+// NOFAIL-GUARANTEE
 {
    mOffset = newOffset;
 }
