@@ -1441,15 +1441,26 @@ bool WaveClip::AppendCoded(const wxString &fName, sampleCount start,
 }
 
 bool WaveClip::Flush()
+// PARTIALLY-STRONG-GUARANTEE
 {
    //wxLogDebug(wxT("WaveClip::Flush"));
    //wxLogDebug(wxT("   mAppendBufferLen=%lli"), (long long) mAppendBufferLen);
    //wxLogDebug(wxT("   previous sample count %lli"), (long long) mSequence->GetNumSamples());
 
-   bool success = true;
    if (mAppendBufferLen > 0) {
-      mSequence->Append(mAppendBuffer.ptr(), mSequence->GetSampleFormat(), mAppendBufferLen);
+      // PRL:  In case of exceptions from Append below, we intentionally lose
+      // the append buffer, because we may be in the process of delayed handling
+      // of other exceptions that already aborted recording because of a failed
+      // Append.  (See comments in class AudioIO.)
+      // -- Or else, we will go to the application level handler that rolls back
+      // to the last pushed undo state, so we don't care to save the data.
+      // -- SO:  clear mAppendBufferLen FIRST.
+      auto len = mAppendBufferLen;
       mAppendBufferLen = 0;
+
+      mSequence->Append(mAppendBuffer.ptr(), mSequence->GetSampleFormat(), len);
+
+      // Now we have survived the throwing possibilities.
       UpdateEnvelopeTrackLen();
       MarkChanged();
    }

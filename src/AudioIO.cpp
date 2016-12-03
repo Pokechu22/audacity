@@ -2451,6 +2451,11 @@ void AudioIO::StopStream()
             // operations.  GuardedCall ensures that the user sees a warning.
             GuardedCall<void>( [&] {
                WaveTrack* track = mCaptureTracks[i];
+
+               // Require a partly strong exception safety guarantee:
+               // we may lose the unflushed data in the WaveTrack, but none
+               // of the other sample data in the track.
+               // See commands in FillBuffers().
                track->Flush();
 
                if (mPlaybackTracks.size() > 0)
