@@ -224,6 +224,14 @@ void Alg_midifile_reader::Mf_off(int chan, int key, int vel)
         if ((*p)->note->get_identifier() == key &&
             (*p)->note->chan == 
                     chan + channel_offset + port * channel_offset_per_port) {
+            if ((*p)->note->time == time) {
+                // Midis exported from Banjo's Backpack seem to have notes that start
+                // and end at the same time, causing wierd audio issues.  If the note's
+                // starting and ending at the same time, we don't want to mess with its
+                // duration.  (TODO: This fix might not be quite right and may leak
+                // memory, but whatever, it's just for my own use)
+                break;
+            }
             (*p)->note->dur = time - (*p)->note->time;
             // trace("updated %d dur %g\n", (*p)->note->key, (*p)->note->dur);
             Alg_note_list_ptr to_be_freed = *p;
