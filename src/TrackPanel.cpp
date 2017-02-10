@@ -4876,6 +4876,7 @@ void TrackPanel::HandleSliders(wxMouseEvent &event, bool pan)
 #ifdef EXPERIMENTAL_OUTPUT_DISPLAY
    bool panZero = false;
 #endif
+   wxAssert(mCapturedTrack->GetKind() == Track::Wave);
 
    // On the Mac, we'll lose track capture if the slider dialog
    // is displayed, but it doesn't hurt to do this for all plats.
@@ -4894,11 +4895,7 @@ void TrackPanel::HandleSliders(wxMouseEvent &event, bool pan)
 
    float newValue = slider->Get();
    MixerBoard* pMixerBoard = this->GetMixerBoard(); // Update mixer board, too.
-#ifdef EXPERIMENTAL_MIDI_OUT
-  if (capturedTrack->GetKind() == Track::Wave)
-#endif
-  {
-     const auto wt = static_cast<WaveTrack*>(capturedTrack);
+   const auto wt = static_cast<WaveTrack*>(capturedTrack);
 
    // Assume linked track is wave or null
    const auto link = static_cast<WaveTrack *>(mTracks->GetLink(wt));
@@ -4927,40 +4924,35 @@ void TrackPanel::HandleSliders(wxMouseEvent &event, bool pan)
       if (pMixerBoard)
          pMixerBoard->UpdateGain(wt);
    }
-  }
-#ifdef EXPERIMENTAL_MIDI_OUT
-  else {
-     // mCapturedTrack is not wave...
-      if (!pan) {
-         // .. so assume it is note
-         static_cast<NoteTrack*>(mCapturedTrack)->SetVelocity(newValue);
-#ifdef EXPERIMENTAL_MIXER_BOARD // XXX this is wrong
-            if (pMixerBoard)
-               // probably should modify UpdateGain to take a track that is
-               // either a WaveTrack or a NoteTrack.
-               pMixerBoard->UpdateGain((WaveTrack*)capturedTrack);
-#endif
-      }
-   }
-#endif
 
    RefreshTrack(capturedTrack);
 
    if (event.ButtonUp()) {
-#ifdef EXPERIMENTAL_MIDI_OUT
-    if (capturedTrack->GetKind() == Track::Wave) {
-#endif
       MakeParentPushState(pan ? _("Moved pan slider") : _("Moved gain slider"),
                           pan ? _("Pan") : _("Gain"),
                           UndoPush::CONSOLIDATE);
-#ifdef EXPERIMENTAL_MIDI_OUT
-    } else {
-      MakeParentPushState(_("Moved velocity slider"), _("Velocity"), UndoPush::CONSOLIDATE);
-    }
-#endif
       SetCapturedTrack( NULL );
    }
 }
+
+#ifdef EXPERIMENTAL_MIDI_OUT
+void TrackPanel::HandleVelocitySlider(wxMouseEvent &event)
+{
+   wxAssert(mCapturedTrack->GetKind() == Track::Wave);
+   static_cast<NoteTrack*>(mCapturedTrack)->SetVelocity(newValue);
+
+   if (pMixerBoard)
+      // probably should modify UpdateGain to take a track that is
+      // either a WaveTrack or a NoteTrack.
+      pMixerBoard->UpdateGain((WaveTrack*)capturedTrack);
+}
+RefreshTrack(capturedTrack);
+if (event.ButtonUp()) {
+   MakeParentPushState(_("Moved velocity slider"), _("Velocity"), UndoPush::CONSOLIDATE);
+   SetCapturedTrack(NULL);
+}
+}
+#endif
 
 // The tracks positions within the list have changed, so update the vertical
 // ruler size for the track that triggered the event.
@@ -5277,7 +5269,7 @@ bool TrackPanel::VelocityFunc(Track * t, wxRect rect, wxMouseEvent &event,
 
    SetCapturedTrack(t, IsVelocitySliding);
    mCapturedRect = rect;
-   HandleSliders(event, false);
+   HandleVelocitySlider(event, false);
 
    return true;
 }
@@ -6243,7 +6235,7 @@ void TrackPanel::OnMouseEvent(wxMouseEvent & event)
       break;
 #ifdef EXPERIMENTAL_MIDI_OUT
    case IsVelocitySliding:
-      HandleSliders(event, true);
+      HandleVelocitySlider(event);
       break;
 #endif
    case IsMinimizing:

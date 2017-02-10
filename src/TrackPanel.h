@@ -417,6 +417,9 @@ protected:
    virtual void HandleMutingSoloing(wxMouseEvent & event, bool solo);
    virtual void HandleMinimizing(wxMouseEvent & event);
    virtual void HandleSliders(wxMouseEvent &event, bool pan);
+#ifdef EXPERIMENTAL_MIDI_OUT
+   virtual void HandleVelocitySlider(wxMouseEvent &event);
+#endif
 
 
    // These *Func methods are used in TrackPanel::HandleLabelClick to set up
