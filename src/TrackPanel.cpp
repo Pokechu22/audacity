@@ -1163,7 +1163,8 @@ void TrackPanel::HandleInterruptedDrag()
     IsGainSliding,
     IsPanSliding,
     WasOverCutLine,
-    IsStretching
+    IsStretching,
+    IsVelocitySliding
     */
    // The bogus id isn't used anywhere, but may help with debugging.
    // as this is sending a bogus mouse up.  The mouse button is still actually down
@@ -4932,8 +4933,8 @@ void TrackPanel::HandleSliders(wxMouseEvent &event, bool pan)
      // mCapturedTrack is not wave...
       if (!pan) {
          // .. so assume it is note
-         static_cast<NoteTrack*>(mCapturedTrack)->SetGain(newValue);
-#ifdef EXPERIMENTAL_MIXER_BOARD
+         static_cast<NoteTrack*>(mCapturedTrack)->SetVelocity(newValue);
+#ifdef EXPERIMENTAL_MIXER_BOARD // XXX this is wrong
             if (pMixerBoard)
                // probably should modify UpdateGain to take a track that is
                // either a WaveTrack or a NoteTrack.
@@ -5089,8 +5090,7 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
          // looking in the wrong place. We pass it a bogus rectangle created when
          // the slider was placed to "fake" GainFunc into finding the slider in
          // its actual location.
-         if (GainFunc(t, ((NoteTrack *) t)->GetGainPlacementRect(),
-            event, event.m_x, event.m_y))
+         if (VelocityFunc(t, midiRect, event, event.m_x, event.m_y))
             return;
 #endif
          mTrackInfo.GetTrackControlsRect(rect, midiRect);
@@ -5265,6 +5265,23 @@ bool TrackPanel::PanFunc(Track * t, wxRect rect, wxMouseEvent &event,
 
    return true;
 }
+
+#ifdef EXPERIMENTAL_MIDI_OUT
+bool TrackPanel::VelocityFunc(Track * t, wxRect rect, wxMouseEvent &event,
+   int x, int y)
+{
+   wxRect sliderRect;
+   mTrackInfo.GetVelocityRect(rect, sliderRect);
+   if (!sliderRect.Contains(x, y))
+      return false;
+
+   SetCapturedTrack(t, IsVelocitySliding);
+   mCapturedRect = rect;
+   HandleSliders(event, false);
+
+   return true;
+}
+#endif
 
 /// Mute or solo the given track (t).  If solo is true, we're
 /// soloing, otherwise we're muting.  Basically, check and see
@@ -6224,6 +6241,11 @@ void TrackPanel::OnMouseEvent(wxMouseEvent & event)
    case IsPanSliding:
       HandleSliders(event, true);
       break;
+#ifdef EXPERIMENTAL_MIDI_OUT
+   case IsVelocitySliding:
+      HandleSliders(event, true);
+      break;
+#endif
    case IsMinimizing:
       HandleMinimizing(event);
       break;
@@ -7269,36 +7291,24 @@ void TrackPanel::DrawOutside(Track * t, wxDC * dc, const wxRect & rec,
       midiRect.height -= 21; // allow room for minimize button at bottom
 
 #ifdef EXPERIMENTAL_MIDI_OUT
-         // the offset 2 is just to leave a little space between channel buttons
-         // and velocity slider (if any)
-         int h = ((NoteTrack *) t)->DrawLabelControls(*dc, midiRect) + 2;
+      // the offset 2 is just to leave a little space between channel buttons
+      // and velocity slider (if any)
+      int h = ((NoteTrack *) t)->DrawLabelControls(*dc, midiRect) + 2;
 
-         // Draw some lines for MuteSolo buttons:
-         if (rect.height > 84) {
-            AColor::Line(*dc, rect.x+48 , rect.y+50, rect.x+48, rect.y + 66);
-            // bevel below mute/solo
-            AColor::Line(*dc, rect.x, rect.y + 66, mTrackInfo.GetTrackInfoWidth(), rect.y + 66);
-         }
-         mTrackInfo.DrawMuteSolo(dc, rect, t,
-               (captured && mMouseCapture == IsMuting), false, HasSoloButton());
-         mTrackInfo.DrawMuteSolo(dc, rect, t,
-               (captured && mMouseCapture == IsSoloing), true, HasSoloButton());
+      // Draw some lines for MuteSolo buttons:
+      if (rect.height > 84) {
+         AColor::Line(*dc, rect.x+48 , rect.y+50, rect.x+48, rect.y + 66);
+         // bevel below mute/solo
+         AColor::Line(*dc, rect.x, rect.y + 66, mTrackInfo.GetTrackInfoWidth(), rect.y + 66);
+      }
+      mTrackInfo.DrawMuteSolo(dc, rect, t,
+            (captured && mMouseCapture == IsMuting), false, HasSoloButton());
+      mTrackInfo.DrawMuteSolo(dc, rect, t,
+            (captured && mMouseCapture == IsSoloing), true, HasSoloButton());
 
-         // place a volume control below channel buttons (this will
-         // control an offset to midi velocity).
-         // DrawVelocitySlider places slider assuming this is a Wave track
-         // and using a large offset to leave room for other things,
-         // so here we make a fake rectangle as if it is for a Wave
-         // track, but it is offset to place the slider properly in
-         // a Note track. This whole placement thing should be redesigned
-         // to lay out different types of tracks and controls
-         wxRect gr; // gr is gain rectangle where slider is drawn
-         mTrackInfo.GetGainRect(rect, gr);
-         rect.y = rect.y + h - gr.y; // ultimately want slider at rect.y + h
-         rect.height = rect.height - h + gr.y;
-         // save for mouse hit detect:
-         ((NoteTrack *) t)->SetGainPlacementRect(rect);
-         mTrackInfo.DrawVelocitySlider(dc, (NoteTrack *) t, rect);
+      // Place a volume control below channel buttons (this will
+      // control an offset to midi velocity).
+      mTrackInfo.DrawVelocitySlider(dc, (NoteTrack *)t, rect, captured);
 #endif
    }
 #endif // USE_MIDI
@@ -9054,6 +9064,22 @@ TrackInfo::TrackInfo(TrackPanel * pParentIn)
                                PAN_SLIDER);
    mPanCaptured->SetDefaultValue(0.0);
 
+#ifdef EXPERIMENTAL_MIDI_OUT
+   GetVelocityRect(rect, sliderRect);
+
+   /* i18n-hint: Title of the Velocity slider, used to adjust the volume of note tracks */
+   mVelocity = std::make_unique<LWSlider>(pParent, _("Velocity"),
+      wxPoint(sliderRect.x, sliderRect.y),
+      wxSize(sliderRect.width, sliderRect.height),
+      VEL_SLIDER);
+   mVelocity->SetDefaultValue(0.0);
+   mVelocityCaptured = std::make_unique<LWSlider>(pParent, _("Velocity"),
+      wxPoint(sliderRect.x, sliderRect.y),
+      wxSize(sliderRect.width, sliderRect.height),
+      VEL_SLIDER);
+   mVelocityCaptured->SetDefaultValue(0.0);
+#endif
+
    UpdatePrefs();
 }
 
@@ -9109,6 +9135,14 @@ void TrackInfo::GetGainRect(const wxRect & rect, wxRect & dest) const
 
 void TrackInfo::GetPanRect(const wxRect & rect, wxRect & dest) const
 {
+   dest.x = rect.x + 7;
+   dest.y = rect.y + 100;
+   dest.width = 84;
+   dest.height = 25;
+}
+
+void TrackInfo::GetVelocityRect(const wxRect & rect, wxRect & dest) const
+{//XXX
    dest.x = rect.x + 7;
    dest.y = rect.y + 100;
    dest.width = 84;
@@ -9376,27 +9410,6 @@ void TrackInfo::DrawMinimize(wxDC * dc, const wxRect & rect, Track * t, bool dow
    AColor::BevelTrackInfo(*dc, !down, bev);
 }
 
-#ifdef EXPERIMENTAL_MIDI_OUT
-void TrackInfo::DrawVelocitySlider(wxDC *dc, NoteTrack *t, wxRect rect) const
-{
-    wxRect gainRect;
-    int index = t->GetIndex();
-
-    //EnsureSufficientSliders(index);
-
-    GetGainRect(rect, gainRect);
-    if (gainRect.y + gainRect.height < rect.y + rect.height - 19) {
-       auto &gain = mGain; // mGains[index];
-       gain->SetStyle(VEL_SLIDER);
-       GainSlider(index)->Move(wxPoint(gainRect.x, gainRect.y));
-       GainSlider(index)->Set(t->GetGain());
-       GainSlider(index)->OnPaint(*dc
-          // , t->GetSelected()
-       );
-    }
-}
-#endif
-
 void TrackInfo::DrawSliders(wxDC *dc, WaveTrack *t, wxRect rect, bool captured) const
 {
    wxRect sliderRect;
@@ -9411,6 +9424,18 @@ void TrackInfo::DrawSliders(wxDC *dc, WaveTrack *t, wxRect rect, bool captured) 
       PanSlider(t, captured)->OnPaint(*dc);
    }
 }
+
+#ifdef EXPERIMENTAL_MIDI_OUT
+void TrackInfo::DrawVelocitySlider(wxDC *dc, NoteTrack *t, wxRect rect, bool captured) const
+{
+   wxRect sliderRect;
+
+   GetVelocityRect(rect, sliderRect);
+   if (sliderRect.y + sliderRect.height < rect.y + rect.height - 19) {
+      VelocitySlider(t, captured)->OnPaint(*dc);
+   }
+}
+#endif
 
 LWSlider * TrackInfo::GainSlider(WaveTrack *t, bool captured) const
 {
@@ -9445,6 +9470,24 @@ LWSlider * TrackInfo::PanSlider(WaveTrack *t, bool captured) const
 
    return (captured ? mPanCaptured : mPan).get();
 }
+
+LWSlider * TrackInfo::VelocitySlider(NoteTrack *t, bool captured) const
+{
+   wxRect rect(kLeftInset, t->GetY() - pParent->GetViewInfo()->vpos + kTopInset, 1, t->GetHeight());
+   wxRect sliderRect;
+   GetVelocityRect(rect, sliderRect);
+
+   wxPoint pos = sliderRect.GetPosition();
+   float velocity = t->GetVelocity();
+
+   mVelocity->Move(pos);
+   mVelocity->Set(velocity);
+   mVelocityCaptured->Move(pos);
+   mVelocityCaptured->Set(velocity);
+
+   return (captured ? mVelocityCaptured : mVelocity).get();
+}
+
 
 void TrackInfo::UpdatePrefs()
 {

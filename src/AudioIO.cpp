@@ -3779,7 +3779,7 @@ void AudioIO::OutputEvent()
          data1 = mNextEvent->get_pitch();
          if (mNextIsNoteOn) {
             data2 = mNextEvent->get_loud(); // get velocity
-            int offset = mNextEventTrack->GetGain();
+            int offset = mNextEventTrack->GetVelocity();
             data2 += offset; // offset comes from per-track slider
             // clip velocity to insure a legal note-on value
             data2 = (data2 < 0 ? 1 : (data2 > 127 ? 127 : data2));
@@ -3887,7 +3887,7 @@ void AudioIO::FillMidiBuffers()
          break;
       }
    int numMidiPlaybackTracks = gAudioIO->mMidiPlaybackTracks.size();
-   for(t = 0; t < numMidiPlaybackTracks; t++ )
+   for(unsigned t = 0; t < numMidiPlaybackTracks; t++ )
       if( gAudioIO->mMidiPlaybackTracks[t]->GetSolo() ) {
          hasSolo = true;
          break;
@@ -4360,7 +4360,7 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
                numSolo++;
 #ifdef EXPERIMENTAL_MIDI_OUT
          int numMidiPlaybackTracks = gAudioIO->mMidiPlaybackTracks.size();
-         for( t = 0; t < numMidiPlaybackTracks; t++ )
+         for(unsigned t = 0; t < numMidiPlaybackTracks; t++ )
             if( gAudioIO->mMidiPlaybackTracks[t]->GetSolo() )
                numSolo++;
 #endif
