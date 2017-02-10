@@ -217,7 +217,7 @@ MixerTrackCluster::MixerTrackCluster(wxWindow* parent,
                _("Velocity"),
                ctrlPos, ctrlSize, VEL_SLIDER, true,
                true, 0.0, wxVERTICAL);
-   } else
+   } else {
 #endif
    mSlider_Gain =
       safenew MixerTrackSlider(
@@ -227,6 +227,9 @@ MixerTrackCluster::MixerTrackCluster(wxWindow* parent,
             ctrlPos, ctrlSize, DB_SLIDER, true,
             true, 0.0, wxVERTICAL);
    mSlider_Gain->SetName(_("Gain"));
+#ifdef EXPERIMENTAL_MIDI_OUT
+   }
+#endif
 
    this->UpdateGain();
 
@@ -511,11 +514,9 @@ void MixerTrackCluster::UpdateGain()
 {
 #ifdef EXPERIMENTAL_MIDI_OUT
    if (mNoteTrack) {
-      mSlider_Gain->SetStyle(VEL_SLIDER);
       mSlider_Gain->Set(mNoteTrack->GetVelocity()); // XXX
       return;
    }
-   mSlider_Gain->SetStyle(DB_SLIDER);
 #endif
    mSlider_Gain->Set(mLeftTrack->GetGain());
 }
