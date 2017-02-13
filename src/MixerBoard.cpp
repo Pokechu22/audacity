@@ -861,7 +861,7 @@ MixerNoteTrackCluster::MixerNoteTrackCluster(wxWindow* parent,
    ctrlPos.x = kDoubleInset;
    ctrlPos.y += TRACK_NAME_HEIGHT + kDoubleInset;
    const int nVelocitySliderHeight =
-      size.GetHeight() - ctrlPos.y - kQuadrupleInset - kQuadrupleInset - kQuadrupleInset - kQuadrupleInset;
+      size.GetHeight() - ctrlPos.y - kQuadrupleInset;
    ctrlSize.Set(kLeftSideStackWidth - kQuadrupleInset, nVelocitySliderHeight);
 
    mSlider_Velocity =
@@ -871,6 +871,20 @@ MixerNoteTrackCluster::MixerNoteTrackCluster(wxWindow* parent,
             _("Velocity"),
             ctrlPos, ctrlSize, VEL_SLIDER, true,
             true, 0.0, wxVERTICAL);
+}
+
+void MixerNoteTrackCluster::HandleResize()
+{
+   MixerTrackCluster::HandleResize();
+
+   const int newClusterHeight = this->GetSize().GetHeight();
+
+   const int nVelocitySliderHeight =
+      newClusterHeight -
+      (kInset + // margin above mStaticText_TrackName
+      TRACK_NAME_HEIGHT + kDoubleInset) - // mStaticText_TrackName + margin
+      kQuadrupleInset; // margin below velocity slider
+   mSlider_Velocity->SetSize(-1, nVelocitySliderHeight);
 }
 
 void MixerNoteTrackCluster::HandleSliderVelocity(const bool bWantPushState /*= false*/)
