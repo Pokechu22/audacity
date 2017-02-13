@@ -189,6 +189,7 @@ public:
                   const wxPoint& pos = wxDefaultPosition,
                   const wxSize& size = wxDefaultSize);
 
+   void HandleResize() override;
    void HandleSliderVelocity(const bool bWantPushState = false);
 
    void UpdateForStateChange() override;
