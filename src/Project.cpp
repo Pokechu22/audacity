@@ -5313,12 +5313,16 @@ void AudacityProject::RemoveTrack(Track * toRemove)
    wxString name = toRemove->GetName();
    Track *partner = toRemove->GetLink();
 
+#ifdef EXPERIMENTAL_MIDI_OUT
+   if (toRemove->GetKind() == Track::Wave || toRemove->GetKind() == Track::Note)
+#else
    if (toRemove->GetKind() == Track::Wave)
+#endif
    {
       // Update mixer board displayed tracks.
       MixerBoard* pMixerBoard = this->GetMixerBoard();
       if (pMixerBoard)
-         pMixerBoard->RemoveTrackCluster((WaveTrack*)toRemove); // Will remove partner shown in same cluster.
+         pMixerBoard->RemoveTrackCluster(toRemove); // Will remove partner shown in same cluster.
    }
 
    mTracks->Remove(toRemove);

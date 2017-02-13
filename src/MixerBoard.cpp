@@ -1086,17 +1086,9 @@ void MixerBoard::UpdateTrackClusters()
    Track* pLeftTrack;
    Track* pRightTrack;
 
-   wchar_t buffer[200];
-   swprintf(buffer, L"Count %d\n", nClusterCount);
-   OutputDebugStringW(buffer);
-
    pLeftTrack = iterTracks.First();
    while (pLeftTrack) {
       pRightTrack = pLeftTrack->GetLinked() ? iterTracks.Next() : NULL;
-      swprintf(buffer, L"%d\n", (int)pLeftTrack);
-      OutputDebugStringW(buffer);
-      swprintf(buffer, L"%d\n", pLeftTrack->GetKind());
-      OutputDebugStringW(buffer);
 
       if (pLeftTrack->GetKind() == Track::Wave
 #ifdef EXPERIMENTAL_MIDI_OUT
@@ -1104,8 +1096,6 @@ void MixerBoard::UpdateTrackClusters()
 #endif
           )
       {
-         swprintf(buffer, L"#%d\n", nClusterIndex);
-         OutputDebugStringW(buffer);
          if (nClusterIndex < nClusterCount)
          {
             // There already is a cluster for that.
@@ -1115,23 +1105,19 @@ void MixerBoard::UpdateTrackClusters()
 
             MixerTrackCluster* pMixerTrackCluster = mMixerTrackClusters[nClusterIndex];
             if (pMixerTrackCluster->GetKind() == pLeftTrack->GetKind()) {
-               OutputDebugStringW(L"DU\n");
                // Can directly update it.  So, do so.
                if (pLeftTrack->GetKind() == Track::Wave) {
-                  OutputDebugStringW(L"Wave\n");
                   ((MixerWaveTrackCluster*)pMixerTrackCluster)->SetTrack(
                         (WaveTrack*)pLeftTrack,
                         (WaveTrack*)pRightTrack);  // pRightTrack must be wave or null
                }
 #ifdef EXPERIMENTAL_MIDI_OUT
                else if (pLeftTrack->GetKind() == Track::Note) {
-                  OutputDebugStringW(L"Note\n");
                   // Assume no linked track for note tracks
                   ((MixerNoteTrackCluster*)pMixerTrackCluster)->SetTrack((NoteTrack*)pLeftTrack);
                }
 #endif
             } else {
-               OutputDebugStringW(L"RC\n");
                // Wrong kind; change it.
                wxPoint clusterPos = pMixerTrackCluster->GetPosition();
                wxSize clusterSize = pMixerTrackCluster->GetSize();
@@ -1140,7 +1126,6 @@ void MixerBoard::UpdateTrackClusters()
                pMixerTrackCluster = NULL;
 
                if (pLeftTrack->GetKind() == Track::Wave) {
-                  OutputDebugStringW(L"Wave\n");
                   pMixerTrackCluster =
                      safenew MixerWaveTrackCluster(mScrolledWindow, this, mProject,
                                              static_cast<WaveTrack*>(pLeftTrack),
@@ -1150,7 +1135,6 @@ void MixerBoard::UpdateTrackClusters()
                }
 #ifdef EXPERIMENTAL_MIDI_OUT
                else if (pLeftTrack->GetKind() == Track::Note) {
-                  OutputDebugStringW(L"Note\n");
                   pMixerTrackCluster =
                      safenew MixerNoteTrackCluster(mScrolledWindow, this, mProject,
                                              static_cast<NoteTrack*>(pLeftTrack),
@@ -1164,7 +1148,6 @@ void MixerBoard::UpdateTrackClusters()
          }
          else
          {
-            OutputDebugStringW(L"Create\n");
 
             // Not already showing it. Add a NEW MixerTrackCluster.
             wxPoint clusterPos(
@@ -1176,7 +1159,6 @@ void MixerBoard::UpdateTrackClusters()
             wxSize clusterSize(kMixerTrackClusterWidth, nClusterHeight);
             if (pLeftTrack->GetKind() == Track::Wave)
             {
-               OutputDebugStringW(L"Wave\n");
                pAddedMixerTrackCluster =
                   safenew MixerWaveTrackCluster(mScrolledWindow, this, mProject,
                                           static_cast<WaveTrack*>(pLeftTrack),
@@ -1187,7 +1169,6 @@ void MixerBoard::UpdateTrackClusters()
 #ifdef EXPERIMENTAL_MIDI_OUT
             else if (pLeftTrack->GetKind() == Track::Note)
             {
-               OutputDebugStringW(L"Note\n");
                pAddedMixerTrackCluster =
                   safenew MixerNoteTrackCluster(mScrolledWindow, this, mProject,
                                           static_cast<NoteTrack*>(pLeftTrack),
@@ -1204,14 +1185,12 @@ void MixerBoard::UpdateTrackClusters()
 
    if (pAddedMixerTrackCluster)
    {
-      OutputDebugStringW(L"Resizing\n");
       // Added at least one MixerTrackCluster.
       this->UpdateWidth();
       this->ResizeTrackClusters();
    }
    else if (nClusterIndex < nClusterCount)
    {
-      OutputDebugStringW(L"TOO MANY!\n");
       // We've got too many clusters.
       // This can happen only on things like Undo New Audio Track or Undo Import
       // that don't call RemoveTrackCluster explicitly.
@@ -1305,6 +1284,11 @@ void MixerBoard::RemoveTrackCluster(const WaveTrack* pTrack)
 #ifdef EXPERIMENTAL_MIDI_OUT
    // Sanity check: if there is still a MixerTrackCluster with pTrack, then
    // we deleted the first but should have deleted the last:
+
+   // XXX Is this assertion actually correct?  It fires on undoing and redoing
+   // the removal of a track, which seems to be incorrect (that happens even
+   // if there are no note tracks).  It's not clear if that assertion actually
+   // should exist...
    FindMixerTrackCluster(pTrack, &pMixerTrackCluster);
    wxASSERT(pMixerTrackCluster == NULL);
 #endif

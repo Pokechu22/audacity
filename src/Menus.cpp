@@ -6775,8 +6775,12 @@ void AudacityProject::OnRemoveTracks()
 
    while (t) {
       if (t->GetSelected()) {
+#ifdef EXPERIMENTAL_MIDI_OUT
+         if (mMixerBoard && (t->GetKind() == Track::Wave || t->GetKind() == Track::Note))
+#else
          if (mMixerBoard && (t->GetKind() == Track::Wave))
-            mMixerBoard->RemoveTrackCluster((WaveTrack*)t);
+#endif
+            mMixerBoard->RemoveTrackCluster(t);
          if (!f)
             f = l;         // Capture the track preceeding the first removed track
          t = iter.RemoveCurrent();
