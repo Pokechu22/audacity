@@ -7281,11 +7281,11 @@ void TrackPanel::DrawOutside(Track * t, wxDC * dc, const wxRect & rec,
 #ifdef EXPERIMENTAL_MIDI_OUT
       ((NoteTrack *)t)->DrawLabelControls(*dc, rect);
 
-      // Draw some lines for MuteSolo buttons:
+      // Draw some lines for MuteSolo buttons (normally handled by DrawBordersWithin but not done for note tracks)
       if (rect.height > 84) {
-         AColor::Line(*dc, rect.x+48 , rect.y+50, rect.x+48, rect.y + 66);
-         // bevel below mute/solo
-         AColor::Line(*dc, rect.x, rect.y + 66, mTrackInfo.GetTrackInfoWidth(), rect.y + 66);
+         // Note: offset up by 34 units
+         AColor::Line(*dc, rect.x + 48, rect.y + 16, rect.x + 48, rect.y + 32);    // between mute/solo
+         AColor::Line(*dc, rect.x, rect.y + 32, kTrackInfoWidth, rect.y + 32);   // below mute/solo
       }
       mTrackInfo.DrawMuteSolo(dc, rect, t,
             (captured && mMouseCapture == IsMuting), false, HasSoloButton());
