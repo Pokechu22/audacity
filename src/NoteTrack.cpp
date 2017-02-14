@@ -244,7 +244,7 @@ const int cellWidth = 23, cellHeight = 16, labelYOffset = 34;
 
 void NoteTrack::DrawLabelControls(wxDC & dc, wxRect & rect)
 {
-   if (rect.height < labelYOffset + cellHeight * 4) {
+   if (rect.height < labelYOffset + cellHeight * 4 + 20) {
       return;
    }
 
@@ -329,7 +329,7 @@ void NoteTrack::DrawLabelControls(wxDC & dc, wxRect & rect)
 
 bool NoteTrack::LabelClick(wxRect & rect, int mx, int my, bool right)
 {
-   if (rect.height < labelYOffset + cellHeight * 4)
+   if (rect.height < labelYOffset + cellHeight * 4 + 20)
       return false;
 
    // XXX Why is the rectangle passed here is wider (128)
