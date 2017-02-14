@@ -4942,10 +4942,16 @@ void TrackPanel::HandleSliders(wxMouseEvent &event, bool pan)
 void TrackPanel::HandleVelocitySlider(wxMouseEvent &event)
 {
    wxASSERT(mCapturedTrack->GetKind() == Track::Note);
-
    NoteTrack *capturedTrack = (NoteTrack *) mCapturedTrack;
 
    LWSlider *slider = mTrackInfo.VelocitySlider(capturedTrack, true);
+
+   slider->OnMouseEvent(event);
+
+   //If we have a double-click, do this...
+   if (event.LeftDClick())
+      mMouseCapture = IsUncaptured;
+
    float newValue = slider->Get();
    capturedTrack->SetVelocity(newValue);
 
@@ -5080,7 +5086,6 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
             MuteSoloFunc(t, rect, event.m_x, event.m_y, true))
             return;
 
-         // Fortunately, VelocityFunc doesn't need that custom rectangle.
          if (VelocityFunc(t, rect, event, event.m_x, event.m_y))
             return;
 #endif
@@ -7274,10 +7279,7 @@ void TrackPanel::DrawOutside(Track * t, wxDC * dc, const wxRect & rec,
 #ifdef USE_MIDI
    else if (bIsNote) {
 #ifdef EXPERIMENTAL_MIDI_OUT
-      // the offset 2 is just to leave a little space between channel buttons
-      // and velocity slider (if any)
-      int h = ((NoteTrack *)t)->DrawLabelControls(*dc, rect
-         ) + 2;
+      ((NoteTrack *)t)->DrawLabelControls(*dc, rect);
 
       // Draw some lines for MuteSolo buttons:
       if (rect.height > 84) {
