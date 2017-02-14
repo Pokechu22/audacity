@@ -7282,7 +7282,7 @@ void TrackPanel::DrawOutside(Track * t, wxDC * dc, const wxRect & rec,
       ((NoteTrack *)t)->DrawLabelControls(*dc, rect);
 
       // Draw some lines for MuteSolo buttons (normally handled by DrawBordersWithin but not done for note tracks)
-      if (rect.height > 84) {
+      if (rect.height > 48) {
          // Note: offset up by 34 units
          AColor::Line(*dc, rect.x + 48, rect.y + 16, rect.x + 48, rect.y + 32);    // between mute/solo
          AColor::Line(*dc, rect.x, rect.y + 32, kTrackInfoWidth, rect.y + 32);   // below mute/solo
@@ -9143,7 +9143,7 @@ void TrackInfo::GetPanRect(const wxRect & rect, wxRect & dest) const
 }
 
 void TrackInfo::GetVelocityRect(const wxRect & rect, wxRect & dest) const
-{//XXX
+{
    dest.x = rect.x + 7;
    dest.y = rect.y + 100;
    dest.width = 84;
