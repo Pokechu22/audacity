@@ -99,10 +99,13 @@ private:
    // Draw the minimize button *and* the sync-lock track icon, if necessary.
    void DrawMinimize(wxDC * dc, const wxRect & rect, Track * t, bool down) const;
 
-   void GetTrackControlsRect(const wxRect & rect, wxRect &dest) const;
    void GetCloseBoxRect(const wxRect & rect, wxRect &dest) const;
    void GetTitleBarRect(const wxRect & rect, wxRect &dest) const;
+#ifdef EXPERIMENTAL_MIDI_OUT
+   void GetMuteSoloRect(const wxRect & rect, wxRect &dest, bool solo, bool bHasSoloButton, int trackKind) const;
+#else
    void GetMuteSoloRect(const wxRect & rect, wxRect &dest, bool solo, bool bHasSoloButton) const;
+#endif
    void GetGainRect(const wxRect & rect, wxRect &dest) const;
    void GetPanRect(const wxRect & rect, wxRect &dest) const;
    void GetVelocityRect(const wxRect & rect, wxRect &dest) const;
