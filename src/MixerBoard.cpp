@@ -871,6 +871,8 @@ MixerNoteTrackCluster::MixerNoteTrackCluster(wxWindow* parent,
       _("Velocity"),
       ctrlPos, ctrlSize, VEL_SLIDER, true,
       true, 0.0, wxVERTICAL);
+
+   this->UpdateVelocity();
 }
 
 void MixerNoteTrackCluster::HandleResize()
