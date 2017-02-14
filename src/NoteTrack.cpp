@@ -154,7 +154,7 @@ Track::Holder NoteTrack::Duplicate() const
       wxASSERT(alg_track->get_type() == 's');
       duplicate->mSeq.reset(static_cast<Alg_seq*>(alg_track.release()));
       SonifyEndUnserialize();
-   } else wxASSERT(false, "neither mSeq nor mSerializationBuffer were present"); // bug if neither mSeq nor mSerializationBuffer
+   } else wxFAIL_MSG("neither mSeq nor mSerializationBuffer were present"); // bug if neither mSeq nor mSerializationBuffer
    // copy some other fields here
    duplicate->SetBottomNote(mBottomNote);
    duplicate->SetPitchHeight(mPitchHeight);

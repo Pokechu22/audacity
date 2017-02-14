@@ -4811,7 +4811,11 @@ void TrackPanel::HandleMutingSoloing(wxMouseEvent & event, bool solo)
    }
 
    wxRect buttonRect;
+#ifdef EXPERIMENTAL_MIDI_OUT
+   mTrackInfo.GetMuteSoloRect(rect, buttonRect, solo, HasSoloButton(), t->GetKind());
+#else
    mTrackInfo.GetMuteSoloRect(rect, buttonRect, solo, HasSoloButton());
+#endif
 
    wxClientDC dc(this);
 
@@ -5071,27 +5075,17 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
       // DM: If it's a NoteTrack, it has special controls
       else if (t->GetKind() == Track::Note)
       {
-         wxRect midiRect;
 #ifdef EXPERIMENTAL_MIDI_OUT
-         // this is an awful hack: make a NEW rectangle at an offset because
-         // MuteSoloFunc thinks buttons are located below some text, e.g.
-         // "Mono, 44100Hz 32-bit float", but this is not true for a Note track
-         wxRect muteSoloRect(rect);
-         muteSoloRect.y -= 34; // subtract the height of wave track text
-         if (MuteSoloFunc(t, muteSoloRect, event.m_x, event.m_y, false) ||
-            MuteSoloFunc(t, muteSoloRect, event.m_x, event.m_y, true))
+         if (MuteSoloFunc(t, rect, event.m_x, event.m_y, false) ||
+            MuteSoloFunc(t, rect, event.m_x, event.m_y, true))
             return;
 
-         // this is a similar hack: GainFunc expects a Wave track slider, so it's
-         // looking in the wrong place. We pass it a bogus rectangle created when
-         // the slider was placed to "fake" GainFunc into finding the slider in
-         // its actual location.
-         if (VelocityFunc(t, midiRect, event, event.m_x, event.m_y))
+         // Fortunately, VelocityFunc doesn't need that custom rectangle.
+         if (VelocityFunc(t, rect, event, event.m_x, event.m_y))
             return;
 #endif
-         mTrackInfo.GetTrackControlsRect(rect, midiRect);
-         if (midiRect.Contains(event.m_x, event.m_y) &&
-            ((NoteTrack *)t)->LabelClick(midiRect, event.m_x, event.m_y,
+         if (rect.Contains(event.m_x, event.m_y) &&
+            ((NoteTrack *)t)->LabelClick(rect, event.m_x, event.m_y,
             event.Button(wxMOUSE_BTN_RIGHT))) {
             Refresh(false);
             return;
@@ -5286,7 +5280,11 @@ bool TrackPanel::MuteSoloFunc(Track * t, wxRect rect, int x, int y,
                               bool solo)
 {
    wxRect buttonRect;
+#ifdef EXPERIMENTAL_MIDI_OUT
+   mTrackInfo.GetMuteSoloRect(rect, buttonRect, solo, HasSoloButton(), t->GetKind());
+#else
    mTrackInfo.GetMuteSoloRect(rect, buttonRect, solo, HasSoloButton());
+#endif
    if (!buttonRect.Contains(x, y))
       return false;
 
@@ -7275,21 +7273,11 @@ void TrackPanel::DrawOutside(Track * t, wxDC * dc, const wxRect & rec,
 
 #ifdef USE_MIDI
    else if (bIsNote) {
-      // Note tracks do not have text, e.g. "Mono, 44100Hz, 32-bit float", so
-      // Mute & Solo button goes higher. To preserve existing AudioTrack code,
-      // we move the buttons up by pretending track is higher (at lower y)
-      rect.y -= 34;
-      rect.height += 34;
-      wxRect midiRect;
-      mTrackInfo.GetTrackControlsRect(trackRect, midiRect);
-      // Offset by height of Solo/Mute buttons:
-      midiRect.y += 15;
-      midiRect.height -= 21; // allow room for minimize button at bottom
-
 #ifdef EXPERIMENTAL_MIDI_OUT
       // the offset 2 is just to leave a little space between channel buttons
       // and velocity slider (if any)
-      int h = ((NoteTrack *) t)->DrawLabelControls(*dc, midiRect) + 2;
+      int h = ((NoteTrack *)t)->DrawLabelControls(*dc, rect
+         ) + 2;
 
       // Draw some lines for MuteSolo buttons:
       if (rect.height > 84) {
@@ -9104,10 +9092,25 @@ void TrackInfo::GetTitleBarRect(const wxRect & rect, wxRect & dest) const
    dest.height = kTrackInfoBtnSize;
 }
 
-void TrackInfo::GetMuteSoloRect(const wxRect & rect, wxRect & dest, bool solo, bool bHasSoloButton) const
+void TrackInfo::GetMuteSoloRect(const wxRect & rect, wxRect & dest, bool solo, bool bHasSoloButton
+#ifdef EXPERIMENTAL_MIDI_OUT
+   , int trackKind) const
+#else
+   ) const
+#endif
 {
-   dest.x = rect.x ;
+   dest.x = rect.x;
+#ifdef EXPERIMENTAL_MIDI_OUT
+   if (trackKind == Track::Note)
+      dest.y = rect.y + 16;
+   else
+   {
+      wxASSERT(trackKind == Track::Wave);
+      dest.y = rect.y + 50;
+   }
+#else
    dest.y = rect.y + 50;
+#endif
    dest.width = 48;
    dest.height = kTrackInfoBtnSize;
 
@@ -9236,21 +9239,6 @@ void TrackInfo::DrawBackground(wxDC * dc, const wxRect & rect, bool bSelected,
 #endif
 }
 
-void TrackInfo::GetTrackControlsRect(const wxRect & rect, wxRect & dest) const
-{
-   wxRect top;
-   wxRect bot;
-
-   GetTitleBarRect(rect, top);
-   GetMinimizeRect(rect, bot);
-
-   dest.x = rect.x;
-   dest.width = kTrackInfoWidth - dest.x;
-   dest.y = top.GetBottom() + 2; // BUG
-   dest.height = bot.GetTop() - top.GetBottom() - 2;
-}
-
-
 void TrackInfo::DrawCloseBox(wxDC * dc, const wxRect & rect, bool down) const
 {
    wxRect bev;
@@ -9333,7 +9321,11 @@ void TrackInfo::DrawMuteSolo(wxDC * dc, const wxRect & rect, Track * t,
    wxRect bev;
    if( solo && !bHasSoloButton )
       return;
+#ifdef EXPERIMENTAL_MIDI_OUT
+   GetMuteSoloRect(rect, bev, solo, bHasSoloButton, t->GetKind());
+#else
    GetMuteSoloRect(rect, bev, solo, bHasSoloButton);
+#endif
    bev.Inflate(-1, -1);
 
    if (bev.y + bev.height >= rect.y + rect.height - 19)
