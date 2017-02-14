@@ -240,19 +240,16 @@ void NoteTrack::WarpAndTransposeNotes(double t0, double t1,
    mSeq->convert_to_seconds();
 }
 
+const int cellWidth = 23, cellHeight = 16, labelYOffset = 34;
 
-
-int NoteTrack::DrawLabelControls(wxDC & dc, wxRect & r)
+void NoteTrack::DrawLabelControls(wxDC & dc, wxRect & rect)
 {
-   int wid = 23;
-   int ht = 16;
-
-   if (r.height < ht * 4) {
-      return r.y + 5 + ht * 4;
+   if (rect.height < labelYOffset + cellHeight * 4) {
+      return;
    }
 
-   int x = r.x + (r.width / 2 - wid * 2) + 2;
-   int y = r.y + 5;
+   int x = rect.x + (rect.width / 2 - cellWidth * 2) - 1;
+   int y = rect.y + labelYOffset;
 
    wxRect box;
    for (int row = 0; row < 4; row++) {
@@ -261,10 +258,10 @@ int NoteTrack::DrawLabelControls(wxDC & dc, wxRect & r)
          // used by AColor and button labels
          int chanName = row * 4 + col + 1;
 
-         box.x = x + col * wid;
-         box.y = y + row * ht;
-         box.width = wid;
-         box.height = ht;
+         box.x = x + col * cellWidth;
+         box.y = y + row * cellHeight;
+         box.width = cellWidth;
+         box.height = cellHeight;
 
          if (IsVisibleChan(chanName - 1)) {
             AColor::MIDIChannel(&dc, chanName);
@@ -317,37 +314,39 @@ int NoteTrack::DrawLabelControls(wxDC & dc, wxRect & r)
 
          }
 
-         wxString t;
+         wxString text;
          wxCoord w;
          wxCoord h;
 
-         t.Printf(wxT("%d"), chanName);
-         dc.GetTextExtent(t, &w, &h);
+         text.Printf(wxT("%d"), chanName);
+         dc.GetTextExtent(text, &w, &h);
 
-         dc.DrawText(t, box.x + (box.width - w) / 2, box.y + (box.height - h) / 2);
+         dc.DrawText(text, box.x + (box.width - w) / 2, box.y + (box.height - h) / 2);
       }
    }
    AColor::MIDIChannel(&dc, 0); // always return with gray color selected
-   return box.GetBottom();
 }
 
-bool NoteTrack::LabelClick(wxRect & r, int mx, int my, bool right)
+bool NoteTrack::LabelClick(wxRect & rect, int mx, int my, bool right)
 {
-   int wid = 23;
-   int ht = 16;
-
-   if (r.height < ht * 4)
+   if (rect.height < labelYOffset + cellHeight * 4)
       return false;
 
-   int x = r.x + (r.width / 2 - wid * 2);
-   int y = r.y + 1;
-   // after adding Mute and Solo buttons, mapping is broken, so hack in the offset
-   y += 12;
+   // XXX Why is the rectangle passed here is wider (128)
+   // than the one passed to the draw method (100)?
+   int width = rect.width - 28;
 
-   int col = (mx - x) / wid;
-   int row = (my - y) / ht;
+   int x = rect.x + (width / 2 - cellWidth * 2) - 1;
+   int y = rect.y + labelYOffset;
 
-   if (row < 0 || row >= 4 || col < 0 || col >= 4)
+   // Can't compare row/col with 0 because division rounds negative numbers towards 0
+   if (mx - x < 0 || my - y < 0)
+      return false;
+
+   int col = (mx - x) / cellWidth;
+   int row = (my - y) / cellHeight;
+
+   if (row >= 4 || col >= 4)
       return false;
 
    int channel = row * 4 + col;
