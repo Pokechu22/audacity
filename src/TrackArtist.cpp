@@ -2155,8 +2155,8 @@ void TrackArtist::DrawClipSpectrum(WaveTrackCache &waveTrackCache,
 
 #ifdef EXPERIMENTAL_FIND_NOTES
    const bool &fftFindNotes = settings.fftFindNotes;
-   const bool &findNotesMinA = settings.findNotesMinA;
-   const bool &numberOfMaxima = settings.numberOfMaxima;
+   const int &findNotesMinA = settings.findNotesMinA;
+   const int &numberOfMaxima = settings.numberOfMaxima;
    const bool &findNotesQuantize = settings.findNotesQuantize;
 #endif
 #ifdef EXPERIMENTAL_FFT_Y_GRID
@@ -2211,6 +2211,9 @@ void TrackArtist::DrawClipSpectrum(WaveTrackCache &waveTrackCache,
 #ifdef EXPERIMENTAL_FFT_Y_GRID
    const float
       log2 = logf(2.0f),
+      lmin = logf(minFreq),
+      lmax = logf(maxFreq),
+      scale = lmin - lmax,
       scale2 = (lmax - lmin) / log2,
       lmin2 = lmin / log2;
 
@@ -2219,8 +2222,8 @@ void TrackArtist::DrawClipSpectrum(WaveTrackCache &waveTrackCache,
    for (int yy = 0; yy < mid.height; ++yy) {
       float n = (float(yy) / mid.height*scale2 - lmin2) * 12;
       float n2 = (float(yy + 1) / mid.height*scale2 - lmin2) * 12;
-      float f = float(minFreq) / (fftSkipPoints + 1)*powf(2.0f, n / 12.0f + lmin2);
-      float f2 = float(minFreq) / (fftSkipPoints + 1)*powf(2.0f, n2 / 12.0f + lmin2);
+      float f = float(minFreq)*powf(2.0f, n / 12.0f + lmin2);
+      float f2 = float(minFreq)*powf(2.0f, n2 / 12.0f + lmin2);
       n = logf(f / 440) / log2 * 12;
       n2 = logf(f2 / 440) / log2 * 12;
       if (floor(n) < floor(n2))
@@ -2267,12 +2270,6 @@ void TrackArtist::DrawClipSpectrum(WaveTrackCache &waveTrackCache,
 #endif
 
 #ifdef EXPERIMENTAL_FIND_NOTES
-         lmins = lmin,
-         lmaxs = lmax
-         ;
-#endif //EXPERIMENTAL_FIND_NOTES
-
-#ifdef EXPERIMENTAL_FIND_NOTES
       int maxima[128];
       float maxima0[128], maxima1[128];
       const float
@@ -2303,7 +2300,7 @@ void TrackArtist::DrawClipSpectrum(WaveTrackCache &waveTrackCache,
                // Do we need this legacy experiment still?
 #ifdef EXPERIMENTAL_FIND_NOTES
                int maximas = 0;
-               const int x0 = half * x;
+               const int x0 = half * xx;
                if (fftFindNotes) {
                   for (int i = maxTableSize - 1; i >= 0; i--)
                      indexes[i] = -1;
@@ -2344,8 +2341,10 @@ void TrackArtist::DrawClipSpectrum(WaveTrackCache &waveTrackCache,
                   }
 
 // The f2pix helper macro converts a frequency into a pixel coordinate.
-#define f2pix(f) (logf(f)-lmins)/(lmaxs-lmins)*hiddenMid.height
-
+#define f2pix(f) (logf(f)-lmin)/(lmax-lmin)*hiddenMid.height
+                  wchar_t buffer[100];
+                  swprintf(buffer, L"count %d\n", maximas);
+                  OutputDebugStringW(buffer);
                   // Possibly quantize the maxima frequencies and create the pixel block limits.
                   for (int i = 0; i < maximas; i++) {
                      int index = maxima[i];
@@ -2359,6 +2358,8 @@ void TrackArtist::DrawClipSpectrum(WaveTrackCache &waveTrackCache,
                      maxima0[i] = f2pix(f0);
                      float f1 = expf((log(f / 440) / log2 * 24 + 1) / 24.0f*log2) * 440;
                      maxima1[i] = f2pix(f1);
+                     swprintf(buffer, L"\t%d %f %f\n", i, maxima0[i], maxima1[i]);
+                     OutputDebugStringW(buffer);
                   }
                }
                int it = 0;

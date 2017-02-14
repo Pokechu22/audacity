@@ -82,11 +82,11 @@
 // A spectrumLogF-like view mode with notes quantization.
 // Just select the "Find Notes" checkbox in the spectrum prefs
 // to activate it instead of the Spectrum log(f) mode.
-//#define EXPERIMENTAL_FIND_NOTES
+#define EXPERIMENTAL_FIND_NOTES
 
 // AM, 22.Nov 2007:
 // A Frequency Grid for the Spectrum Log(f) & Find Notes modes
-//#define EXPERIMENTAL_FFT_Y_GRID
+#define EXPERIMENTAL_FFT_Y_GRID
 
 // Andy Coder, 03.Mar 2009:
 // Allow keyboard seeking before initial playback position

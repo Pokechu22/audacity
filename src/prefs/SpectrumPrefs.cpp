@@ -75,6 +75,10 @@ enum {
    ID_GRAYSCALE,
    ID_SPECTRAL_SELECTION,
 #endif
+#ifdef EXPERIMENTAL_FIND_NOTES
+   ID_FIND_NOTES_MINIMUM,
+   ID_FIND_NOTES_COUNT,
+#endif
    ID_DEFAULTS,
 };
 
@@ -264,19 +268,19 @@ void SpectrumPrefs::PopulateOrExchange(ShuttleGui & S)
          S.StartTwoColumn();
          {
             mFindNotesMinA =
-               S.TieNumericTextBox(_("Minimum Amplitude (dB):"),
-               mTempSettings.fftFindNotes,
+               S.Id(ID_FIND_NOTES_MINIMUM).TieNumericTextBox(_("Minimum Amplitude (dB):"),
+               mTempSettings.findNotesMinA,
                8);
 
             mFindNotesN =
-               S.TieNumericTextBox(_("Max. Number of Notes (1..128):"),
-               mTempSettings.findNotesMinA,
+               S.Id(ID_FIND_NOTES_COUNT).TieNumericTextBox(_("Max. Number of Notes (1..128):"),
+               mTempSettings.numberOfMaxima,
                8);
          }
          S.EndTwoColumn();
 
          S.TieCheckBox(_("&Find Notes"),
-            mTempSettings.numberOfMaxima);
+            mTempSettings.fftFindNotes);
 
          S.TieCheckBox(_("&Quantize Notes"),
             mTempSettings.findNotesQuantize);
