@@ -28,8 +28,8 @@
   To highlight this deliniation, the file is divided into three parts
   based on what thread context each function is intended to run in.
 
-  \par EXPERIMENTAL_MIDI_PLAYBACK
-  If EXPERIMENTAL_MIDI_PLAYBACK is defined, this class also manages
+  \par EXPERIMENTAL_MIDI_OUT
+  If EXPERIMENTAL_MIDI_OUT is defined, this class also manages
   MIDI playback. The reason for putting MIDI here rather than in, say,
   class MidiIO, is that there is no high-level synchronization and
   transport architecture, so Audio and MIDI must be coupled in order
