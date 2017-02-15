@@ -240,6 +240,7 @@ void NoteTrack::WarpAndTransposeNotes(double t0, double t1,
    mSeq->convert_to_seconds();
 }
 
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
 const int cellWidth = 23, cellHeight = 16, labelYOffset = 34;
 
 void NoteTrack::DrawLabelControls(wxDC & dc, wxRect & rect)
@@ -361,6 +362,7 @@ bool NoteTrack::LabelClick(wxRect & rect, int mx, int my, bool right)
 
    return true;
 }
+#endif
 
 void NoteTrack::SetSequence(std::unique_ptr<Alg_seq> &&seq)
 {
