@@ -111,7 +111,7 @@
 // Enables MIDI Output of NoteTrack (MIDI) data during playback
 // USE_MIDI must be defined in order for EXPERIMENTAL_MIDI_OUT to work
 #ifdef USE_MIDI
-#define EXPERIMENTAL_MIDI_OUT
+//#define EXPERIMENTAL_MIDI_OUT
 #endif
 
 // USE_MIDI must be defined in order for EXPERIMENTAL_SCOREALIGN to work
@@ -122,7 +122,7 @@
 // Draws a label to toggle individual channels within a NoteTrack.
 // USE_MIDI must be defined in order for EXPERIMENTAL_MIDI_CONTROLS to work
 #ifdef USE_MIDI
-#define EXPERIMENTAL_MIDI_CONTROLS
+//#define EXPERIMENTAL_MIDI_CONTROLS
 #endif
 
 //If you want any of these files, ask JKC.  They are not

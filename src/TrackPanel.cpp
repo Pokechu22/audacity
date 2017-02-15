@@ -9464,6 +9464,7 @@ LWSlider * TrackInfo::PanSlider(WaveTrack *t, bool captured) const
    return (captured ? mPanCaptured : mPan).get();
 }
 
+#ifdef EXPERIMENTAL_MIDI_OUT
 LWSlider * TrackInfo::VelocitySlider(NoteTrack *t, bool captured) const
 {
    wxRect rect(kLeftInset, t->GetY() - pParent->GetViewInfo()->vpos + kTopInset, 1, t->GetHeight());
@@ -9480,7 +9481,7 @@ LWSlider * TrackInfo::VelocitySlider(NoteTrack *t, bool captured) const
 
    return (captured ? mVelocityCaptured : mVelocity).get();
 }
-
+#endif
 
 void TrackInfo::UpdatePrefs()
 {
