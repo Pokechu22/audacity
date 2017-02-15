@@ -69,8 +69,10 @@ class AUDACITY_DLL_API NoteTrack final : public Track {
    void WarpAndTransposeNotes(double t0, double t1,
                               const TimeWarper &warper, double semitones);
 
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
    void DrawLabelControls(wxDC & dc, wxRect & rect);
    bool LabelClick(wxRect & rect, int x, int y, bool right);
+#endif
 
    void SetSequence(std::unique_ptr<Alg_seq> &&seq);
    Alg_seq* GetSequence();
