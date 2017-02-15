@@ -62,11 +62,11 @@ public:
 class AudacityProject;
 class Meter;
 class MixerBoard;
-#ifdef EXPERIMENTAL_MIDI_OUT
 class Track;
+class WaveTrack;
+#ifdef EXPERIMENTAL_MIDI_OUT
 class NoteTrack;
 #endif
-class WaveTrack;
 
 class MixerTrackCluster : public wxPanelWrapper
 {
@@ -107,8 +107,10 @@ private:
 
 
 public:
-   // mTrack is redundant, but simplifies code that operates on either
-   // mLeftTrack or mNoteTrack.
+   // The track for this MixerTrackCluster; either a wave track or
+   // (with EXPERIMENTAL_MIDI_OUT) a note track.  Use this for general
+   // situations where referencing a specific track (mLeftTrack or mNoteTrack)
+   // would not make sense.
    Track* mTrack;
 
    //vvv Vaughan, 2010-11-05:
@@ -282,27 +284,15 @@ public:
    void UpdateTrackClusters();
 
    int GetTrackClustersWidth();
-#ifdef EXPERIMENTAL_MIDI_OUT
+
    void MoveTrackCluster(const Track* pTrack, bool bUp); // Up in TrackPanel is left in MixerBoard.
    void RemoveTrackCluster(const Track* pTrack);
 
-
    wxBitmap* GetMusicalInstrumentBitmap(const wxString & name);
-#else
-   void MoveTrackCluster(const WaveTrack* pTrack, bool bUp); // Up in TrackPanel is left in MixerBoard.
-   void RemoveTrackCluster(const WaveTrack* pTrack);
-
-
-   wxBitmap* GetMusicalInstrumentBitmap(const WaveTrack* pLeftTrack);
-#endif
 
    bool HasSolo();
 
-#ifdef EXPERIMENTAL_MIDI_OUT
    void RefreshTrackCluster(const Track* pTrack, bool bEraseBackground = true);
-#else
-   void RefreshTrackCluster(const WaveTrack* pTrack, bool bEraseBackground = true);
-#endif
    void RefreshTrackClusters(bool bEraseBackground = true);
    void ResizeTrackClusters();
 
@@ -323,13 +313,8 @@ public:
 
 private:
    void CreateMuteSoloImages();
-#ifdef EXPERIMENTAL_MIDI_OUT
    int FindMixerTrackCluster(const Track* pTrack,
                               MixerTrackCluster** hMixerTrackCluster) const;
-#else
-   int FindMixerTrackCluster(const WaveTrack* pLeftTrack,
-                              MixerTrackCluster** hMixerTrackCluster) const;
-#endif
    void LoadMusicalInstruments();
 
    // event handlers
