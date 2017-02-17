@@ -21,6 +21,7 @@
 #include <wx/statbmp.h>
 #include <wx/stattext.h>
 
+#include "Track.h"
 #include "widgets/AButton.h"
 #include "widgets/ASlider.h"
 #include "widgets/wxPanelWrapper.h"
@@ -62,7 +63,6 @@ public:
 class AudacityProject;
 class Meter;
 class MixerBoard;
-class Track;
 class WaveTrack;
 #ifdef EXPERIMENTAL_MIDI_OUT
 class NoteTrack;
@@ -88,7 +88,7 @@ public:
    void UpdateMute();
    void UpdateSolo();
 
-   // Returned values are the same as given by mTrack::GetKind
+   // Returned values are the same as given by Track::GetKind
    virtual int GetKind() const = 0;
 
 private:
