@@ -788,8 +788,8 @@ BEGIN_EVENT_TABLE(MixerNoteTrackCluster, MixerTrackCluster)
    //EVT_MOUSE_EVENTS(MixerTrackCluster::OnMouseEvent)
    //EVT_PAINT(MixerTrackCluster::OnPaint)
 
-   EVT_SLIDER(ID_SLIDER_PAN, MixerNoteTrackCluster::OnSlider_Velocity)
-   //v EVT_COMMAND_SCROLL(ID_SLIDER_GAIN, MixerTrackCluster::OnSliderScroll_Gain)
+   EVT_SLIDER(ID_SLIDER_VELOCITY, MixerNoteTrackCluster::OnSlider_Velocity)
+   //v EVT_COMMAND_SCROLL(ID_SLIDER_VELOCITY, MixerNoteTrackCluster::OnSliderScroll_Velocity)
 END_EVENT_TABLE()
 
 MixerNoteTrackCluster::MixerNoteTrackCluster(wxWindow* parent,
