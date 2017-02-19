@@ -4933,8 +4933,8 @@ void TrackPanel::HandleSliders(wxMouseEvent &event, bool pan)
      // mCapturedTrack is not wave...
       if (!pan) {
          // .. so assume it is note
-         static_cast<NoteTrack*>(mCapturedTrack)->SetGain(newValue);
-#ifdef EXPERIMENTAL_MIXER_BOARD
+         static_cast<NoteTrack*>(mCapturedTrack)->SetVelocity(newValue);
+#ifdef EXPERIMENTAL_MIXER_BOARD // XXX this is wrong
             if (pMixerBoard)
                // probably should modify UpdateGain to take a track that is
                // either a WaveTrack or a NoteTrack.
@@ -9478,7 +9478,7 @@ LWSlider * TrackInfo::VelocitySlider(NoteTrack *t, bool captured) const
    GetVelocityRect(rect, sliderRect);
 
    wxPoint pos = sliderRect.GetPosition();
-   float velocity = t->GetGain();
+   float velocity = t->GetVelocity();
 
    mVelocity->Move(pos);
    mVelocity->Set(velocity);
