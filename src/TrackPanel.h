@@ -91,10 +91,10 @@ private:
    void DrawTitleBar(wxDC * dc, const wxRect & rect, Track * t, bool down) const;
    void DrawMuteSolo(wxDC * dc, const wxRect & rect, Track * t, bool down, bool solo, bool bHasSoloButton) const;
    void DrawVRuler(wxDC * dc, const wxRect & rect, Track * t) const;
-#ifdef EXPERIMENTAL_MIDI_OUT
-   void DrawVelocitySlider(wxDC * dc, NoteTrack *t, wxRect rect) const ;
-#endif
    void DrawSliders(wxDC * dc, WaveTrack *t, wxRect rect, bool captured) const;
+#ifdef EXPERIMENTAL_MIDI_OUT
+   void DrawVelocitySlider(wxDC * dc, NoteTrack *t, wxRect rect, bool captured) const;
+#endif
 
    // Draw the minimize button *and* the sync-lock track icon, if necessary.
    void DrawMinimize(wxDC * dc, const wxRect & rect, Track * t, bool down) const;
@@ -105,6 +105,7 @@ private:
    void GetMuteSoloRect(const wxRect & rect, wxRect &dest, bool solo, bool bHasSoloButton) const;
    void GetGainRect(const wxRect & rect, wxRect &dest) const;
    void GetPanRect(const wxRect & rect, wxRect &dest) const;
+   void GetVelocityRect(const wxRect & rect, wxRect &dest) const;
    void GetMinimizeRect(const wxRect & rect, wxRect &dest) const;
    void GetSyncLockIconRect(const wxRect & rect, wxRect &dest) const;
 
@@ -113,7 +114,7 @@ public:
    LWSlider * PanSlider(WaveTrack *t, bool captured = false) const;
 
 #ifdef EXPERIMENTAL_MIDI_OUT
-   LWSlider *GainSlider(int index) const;
+   LWSlider * VelocitySlider(NoteTrack *t, bool captured = false) const;
 #endif
 
 private:
@@ -123,6 +124,9 @@ private:
    wxFont mFont;
    std::unique_ptr<LWSlider>
       mGainCaptured, mPanCaptured, mGain, mPan;
+#ifdef EXPERIMENTAL_MIDI_OUT
+   std::unique_ptr<LWSlider> mVelocityCaptured, mVelocity;
+#endif
 
    friend class TrackPanel;
 };
@@ -432,6 +436,10 @@ protected:
                  int x, int y);
    virtual bool PanFunc(Track * t, wxRect rect, wxMouseEvent &event,
                 int x, int y);
+#ifdef EXPERIMENTAL_MIDI_OUT
+   virtual bool VelocityFunc(Track * t, wxRect rect, wxMouseEvent &event,
+      int x, int y);
+#endif
 
 
    virtual void MakeParentRedrawScrollbars();
@@ -739,6 +747,9 @@ protected:
       IsStretching,
 #endif
       IsZooming,
+#ifdef EXPERIMENTAL_MIDI_OUT
+      IsVelocitySliding,
+#endif
 
    };
 
