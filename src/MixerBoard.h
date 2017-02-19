@@ -78,15 +78,18 @@ public:
                      const wxSize& size = wxDefaultSize);
    virtual ~MixerTrackCluster() {}
 
-   void UpdatePrefs();
+   virtual void UpdatePrefs();
 
-   void HandleResize(); // For wxSizeEvents, update gain slider and meter.
+   virtual void HandleResize(); // For wxSizeEvents, update gain slider and meter.
 
    // These are used by TrackPanel for synchronizing control states.
    virtual void UpdateForStateChange(); // Update the controls that can be affected by state change.
    void UpdateName();
    void UpdateMute();
    void UpdateSolo();
+
+   // Returned values are the same as given by mTrack::GetKind
+   virtual int GetKind() const = 0;
 
 private:
    wxColour GetTrackColor();
@@ -139,6 +142,9 @@ public:
                   const wxPoint& pos = wxDefaultPosition,
                   const wxSize& size = wxDefaultSize);
 
+   void UpdatePrefs() override;
+   void HandleResize() override;
+
    void HandleSliderGain(const bool bWantPushState = false);
    void HandleSliderPan(const bool bWantPushState = false);
 
@@ -150,6 +156,11 @@ public:
    void UpdateMeter(const double t0, const double t1);
 
    //v void OnSliderScroll_Gain(wxScrollEvent& event);
+
+   // Updates the track pointer for this mixer track cluster
+   void SetTrack(WaveTrack* leftTrack, WaveTrack* rightTrack = NULL);
+
+   int GetKind() const override { return Track::Wave; }
 private:
 
    void OnSlider_Gain(wxCommandEvent& event);
@@ -172,6 +183,12 @@ public:
 class MixerNoteTrackCluster : public MixerTrackCluster
 {
 public:
+   MixerNoteTrackCluster(wxWindow* parent,
+                  MixerBoard* grandParent, AudacityProject* project,
+                  NoteTrack* noteTrack,
+                  const wxPoint& pos = wxDefaultPosition,
+                  const wxSize& size = wxDefaultSize);
+
    void HandleSliderVelocity(const bool bWantPushState = false);
 
    void UpdateForStateChange() override;
@@ -181,6 +198,11 @@ public:
    // a good idea to display 16 channel "active" lights rather than a meter
 
    // void UpdateMeter(const double t0, const double t1);
+
+   // Updates the track pointer for this mixer track cluster
+   void SetTrack(NoteTrack* track);
+
+   int GetKind() const override { return Track::Note; }
 private:
 
    void OnSlider_Velocity(wxCommandEvent& event);
@@ -285,18 +307,13 @@ public:
 
    void ResetMeters(const bool bResetClipping);
 
-#ifdef EXPERIMENTAL_MIDI_OUT
    void UpdateName(const Track* pTrack);
    void UpdateMute(const Track* pTrack = NULL); // NULL means update for all tracks.
    void UpdateSolo(const Track* pTrack = NULL); // NULL means update for all tracks.
-   void UpdatePan(const Track* pTrack);
-   void UpdateGain(const Track* pTrack);
-#else
-   void UpdateName(const WaveTrack* pTrack);
-   void UpdateMute(const WaveTrack* pTrack = NULL); // NULL means update for all tracks.
-   void UpdateSolo(const WaveTrack* pTrack = NULL); // NULL means update for all tracks.
    void UpdatePan(const WaveTrack* pTrack);
    void UpdateGain(const WaveTrack* pTrack);
+#ifdef EXPERIMENTAL_MIDI_OUT
+   void UpdateVelocity(const NoteTrack* pTrack);
 #endif
 
    void UpdateMeters(const double t1, const bool bLoopedPlay);
