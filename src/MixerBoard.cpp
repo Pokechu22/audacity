@@ -866,11 +866,13 @@ MixerNoteTrackCluster::MixerNoteTrackCluster(wxWindow* parent,
 
    mSlider_Velocity =
       safenew MixerTrackSlider(
-      this, ID_SLIDER_GAIN,
+            this, ID_SLIDER_GAIN,
             /* i18n-hint: title of the MIDI Velocity slider */
             _("Velocity"),
             ctrlPos, ctrlSize, VEL_SLIDER, true,
             true, 0.0, wxVERTICAL);
+
+   this->UpdateVelocity();
 }
 
 void MixerNoteTrackCluster::HandleResize()
