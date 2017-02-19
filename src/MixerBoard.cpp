@@ -78,7 +78,9 @@ void MixerTrackSlider::OnMouseEvent(wxMouseEvent &event)
       {
       case DB_SLIDER: ((MixerWaveTrackCluster*)(this->GetParent()))->HandleSliderGain(true); break;
       case PAN_SLIDER: ((MixerWaveTrackCluster*)(this->GetParent()))->HandleSliderPan(true); break;
+#ifdef EXPERIMENTAL_MIDI_OUT
       case VEL_SLIDER: ((MixerNoteTrackCluster*)(this->GetParent()))->HandleSliderVelocity(true); break;
+#endif
       default: break; // no-op
       }
    }
@@ -187,11 +189,7 @@ MixerTrackCluster::MixerTrackCluster(wxWindow* parent,
    // musical instrument image
    ctrlPos.x += kLeftSideStackWidth + kInset; // + kInset to center it in right side stack
    ctrlSize.Set(MUSICAL_INSTRUMENT_HEIGHT_AND_WIDTH, MUSICAL_INSTRUMENT_HEIGHT_AND_WIDTH);
-#ifdef EXPERIMENTAL_MIDI_OUT
    wxBitmap* bitmap = mMixerBoard->GetMusicalInstrumentBitmap(mTrack->GetName());
-#else
-   wxBitmap* bitmap = mMixerBoard->GetMusicalInstrumentBitmap(mLeftTrack);
-#endif
    wxASSERT(bitmap);
    mBitmapButton_MusicalInstrument =
       safenew wxBitmapButton(this, ID_BITMAPBUTTON_MUSICAL_INSTRUMENT, *bitmap,
@@ -276,33 +274,22 @@ void MixerTrackCluster::UpdateForStateChange()
 
 void MixerTrackCluster::UpdateName()
 {
-#ifdef EXPERIMENTAL_MIDI_OUT
    const wxString newName = mTrack->GetName();
-#else
-   const wxString newName = mLeftTrack->GetName();
-#endif
+
    SetName(newName);
    mStaticText_TrackName->SetLabel(newName);
    #if wxUSE_TOOLTIPS
       mStaticText_TrackName->SetToolTip(newName);
    #endif
    mBitmapButton_MusicalInstrument->SetBitmapLabel(
-#ifdef EXPERIMENTAL_MIDI_OUT
       *(mMixerBoard->GetMusicalInstrumentBitmap(newName)));
-#else
-      *(mMixerBoard->GetMusicalInstrumentBitmap(mLeftTrack)));
-#endif
 }
 
 void MixerTrackCluster::UpdateMute()
 {
-#ifdef EXPERIMENTAL_MIDI_OUT
    mToggleButton_Mute->SetAlternateIdx(mTrack->GetSolo() ? 1 : 0);
+
    if (mTrack->GetMute())
-#else
-   mToggleButton_Mute->SetAlternateIdx(mLeftTrack->GetSolo() ? 1 : 0);
-   if (mLeftTrack->GetMute())
-#endif
       mToggleButton_Mute->PushDown();
    else
       mToggleButton_Mute->PopUp();
@@ -310,11 +297,8 @@ void MixerTrackCluster::UpdateMute()
 
 void MixerTrackCluster::UpdateSolo()
 {
-#ifdef EXPERIMENTAL_MIDI_OUT
    bool bIsSolo = mTrack->GetSolo();
-#else
-   bool bIsSolo = mLeftTrack->GetSolo();
-#endif
+
    if (bIsSolo)
       mToggleButton_Solo->PushDown();
    else
@@ -334,11 +318,7 @@ wxColour MixerTrackCluster::GetTrackColor()
 
 void MixerTrackCluster::HandleSelect(bool bShiftDown, bool bControlDown)
 {
-#ifdef EXPERIMENTAL_MIDI_OUT
    Track *pTrack = mTrack;
-#else
-   Track *pTrack = mLeftTrack;
-#endif
 
    mProject->GetTrackPanel()->HandleListSelection(pTrack, bShiftDown, bControlDown);
 }
@@ -364,11 +344,7 @@ void MixerTrackCluster::OnPaint(wxPaintEvent & WXUNUSED(event))
    wxSize clusterSize = this->GetSize();
    wxRect bev(0, 0, clusterSize.GetWidth() - 1, clusterSize.GetHeight() - 1);
 
-#ifdef EXPERIMENTAL_MIDI_OUT
    auto selected = mTrack->GetSelected();
-#else
-   auto selected = mLeftTrack->GetSelected();
-#endif
 
    for (unsigned int i = 0; i < 4; i++) // 4 gives a big bevel, but there were complaints about visibility otherwise.
    {
@@ -386,13 +362,8 @@ void MixerTrackCluster::OnButton_MusicalInstrument(wxCommandEvent& WXUNUSED(even
 
 void MixerTrackCluster::OnButton_Mute(wxCommandEvent& WXUNUSED(event))
 {
-#ifdef EXPERIMENTAL_MIDI_OUT
    mProject->HandleTrackMute(mTrack, mToggleButton_Mute->WasShiftDown());
    mToggleButton_Mute->SetAlternateIdx(mTrack->GetSolo() ? 1 : 0);
-#else
-   mProject->HandleTrackMute(mLeftTrack, mToggleButton_Mute->WasShiftDown());
-   mToggleButton_Mute->SetAlternateIdx(mLeftTrack->GetSolo() ? 1 : 0);
-#endif
 
    // Update the TrackPanel correspondingly.
    if (mProject->IsSoloSimple())
@@ -403,22 +374,14 @@ void MixerTrackCluster::OnButton_Mute(wxCommandEvent& WXUNUSED(event))
    }
    else
       // Update only the changed track.
-#ifdef EXPERIMENTAL_MIDI_OUT
       mProject->RefreshTPTrack(mTrack);
-#else
-      mProject->RefreshTPTrack(mLeftTrack);
-#endif
 }
 
 void MixerTrackCluster::OnButton_Solo(wxCommandEvent& WXUNUSED(event))
 {
-#ifdef EXPERIMENTAL_MIDI_OUT
    mProject->HandleTrackSolo(mTrack, mToggleButton_Solo->WasShiftDown());
    bool bIsSolo = mTrack->GetSolo();
-#else
-   mProject->HandleTrackSolo(mLeftTrack, mToggleButton_Solo->WasShiftDown());
-   bool bIsSolo = mLeftTrack->GetSolo();
-#endif
+
    mToggleButton_Mute->SetAlternateIdx(bIsSolo ? 1 : 0);
 
    // Update the TrackPanel correspondingly.
@@ -431,11 +394,7 @@ void MixerTrackCluster::OnButton_Solo(wxCommandEvent& WXUNUSED(event))
    }
    else
       // Update only the changed track.
-#ifdef EXPERIMENTAL_MIDI_OUT
       mProject->RefreshTPTrack(mTrack);
-#else
-      mProject->RefreshTPTrack(mLeftTrack);
-#endif
 }
 
 
@@ -573,11 +532,8 @@ void MixerWaveTrackCluster::HandleSliderGain(const bool bWantPushState /*= false
       mRightTrack->SetGain(fValue);
 
    // Update the TrackPanel correspondingly.
-#ifdef EXPERIMENTAL_MIDI_OUT
    mProject->RefreshTPTrack(mTrack);
-#else
-   mProject->RefreshTPTrack(mLeftTrack);
-#endif
+
    if (bWantPushState)
       mProject->TP_PushState(_("Moved gain slider"), _("Gain"), UndoPush::CONSOLIDATE );
 }
@@ -591,11 +547,7 @@ void MixerWaveTrackCluster::HandleSliderPan(const bool bWantPushState /*= false*
       mRightTrack->SetPan(fValue);
 
    // Update the TrackPanel correspondingly.
-#ifdef EXPERIMENTAL_MIDI_OUT
    mProject->RefreshTPTrack(mTrack);
-#else
-   mProject->RefreshTPTrack(mLeftTrack);
-#endif
 
    if (bWantPushState)
       mProject->TP_PushState(_("Moved pan slider"), _("Pan"), UndoPush::CONSOLIDATE);
@@ -603,10 +555,7 @@ void MixerWaveTrackCluster::HandleSliderPan(const bool bWantPushState /*= false*
 
 void MixerWaveTrackCluster::ResetMeter(const bool bResetClipping)
 {
-#ifdef EXPERIMENTAL_MIDI_OUT
-   if (mMeter)
-#endif
-       mMeter->Reset(mLeftTrack->GetRate(), bResetClipping);
+   mMeter->Reset(mLeftTrack->GetRate(), bResetClipping);
 }
 
 // Update the controls that can be affected by state change.
@@ -629,6 +578,7 @@ void MixerWaveTrackCluster::UpdateGain()
 
 void MixerWaveTrackCluster::UpdateMeter(const double t0, const double t1)
 {
+   // XXX this assertion doesn't make sense any more; remove it?  (wave tracks are always wave tracks)
 #ifdef EXPERIMENTAL_MIDI_OUT
    // NoteTracks do not (currently) register on meters. It would probably be
    // a good idea to display 16 channel "active" lights rather than a meter
@@ -649,12 +599,9 @@ void MixerWaveTrackCluster::UpdateMeter(const double t0, const double t1)
    // For now, out change plan produced the following:
    // Vaughan, 2011=10-15: There's no bSuccess here, so I don't know what you mean.
    //    But this change is consistent with the others for EXPERIMENTAL_MIDI_OUT, so I accept it.
+   // XXX this comment no longer applies ^^^^^^
    if ((t0 < 0.0) || (t1 < 0.0) || (t0 >= t1) || // bad time value or nothing to show
-#ifdef EXPERIMENTAL_MIDI_OUT
          ((mMixerBoard->HasSolo() || mTrack->GetMute()) && !mTrack->GetSolo()))
-#else
-         ((mMixerBoard->HasSolo() || mLeftTrack->GetMute()) && !mLeftTrack->GetSolo()))
-#endif
    {
       //v Vaughan, 2011-02-25: Moved the update back to TrackPanel::OnTimer() as it helps with
       //    playback issues reported by Bill and noted on Bug 258, so no assert.
@@ -1226,13 +1173,8 @@ int MixerBoard::GetTrackClustersWidth()
       kDoubleInset;                                // plus final right margin
 }
 
-#ifdef EXPERIMENTAL_MIDI_OUT
 void MixerBoard::MoveTrackCluster(const Track* pTrack,
                                   bool bUp) // Up in TrackPanel is left in MixerBoard.
-#else
-void MixerBoard::MoveTrackCluster(const WaveTrack* pTrack,
-                                  bool bUp) // Up in TrackPanel is left in MixerBoard.
-#endif
 {
    MixerTrackCluster* pMixerTrackCluster;
    int nIndex = FindMixerTrackCluster(pTrack, &pMixerTrackCluster);
@@ -1266,11 +1208,7 @@ void MixerBoard::MoveTrackCluster(const WaveTrack* pTrack,
    }
 }
 
-#ifdef EXPERIMENTAL_MIDI_OUT
 void MixerBoard::RemoveTrackCluster(const Track* pTrack)
-#else
-void MixerBoard::RemoveTrackCluster(const WaveTrack* pTrack)
-#endif
 {
    // Find and destroy.
    MixerTrackCluster* pMixerTrackCluster;
@@ -1311,22 +1249,14 @@ void MixerBoard::RemoveTrackCluster(const WaveTrack* pTrack)
 }
 
 
-#ifdef EXPERIMENTAL_MIDI_OUT
 wxBitmap* MixerBoard::GetMusicalInstrumentBitmap(const wxString & name)
-#else
-wxBitmap* MixerBoard::GetMusicalInstrumentBitmap(const WaveTrack* pLeftTrack)
-#endif
 {
    if (mMusicalInstruments.empty())
       return NULL;
 
    // random choice:    return mMusicalInstruments[(int)pLeftTrack % mMusicalInstruments.GetCount()].mBitmap;
 
-#ifdef EXPERIMENTAL_MIDI_OUT
    const wxString strTrackName(wxString{ name }.MakeLower());
-#else
-   const wxString strTrackName(pLeftTrack->GetName().MakeLower());
-#endif
    size_t nBestItemIndex = 0;
    unsigned int nBestScore = 0;
    unsigned int nInstrIndex = 0;
@@ -1373,11 +1303,7 @@ bool MixerBoard::HasSolo()
    return false;
 }
 
-#ifdef EXPERIMENTAL_MIDI_OUT
 void MixerBoard::RefreshTrackCluster(const Track* pTrack, bool bEraseBackground /*= true*/)
-#else
-void MixerBoard::RefreshTrackCluster(const WaveTrack* pTrack, bool bEraseBackground )
-#endif
 {
    MixerTrackCluster* pMixerTrackCluster;
    this->FindMixerTrackCluster(pTrack, &pMixerTrackCluster);
@@ -1641,22 +1567,13 @@ void MixerBoard::CreateMuteSoloImages()
    mImageSoloDisabled = std::make_unique<wxImage>(mMuteSoloWidth, MUTE_SOLO_HEIGHT); // Leave empty because unused.
 }
 
-#ifdef EXPERIMENTAL_MIDI_OUT
 int MixerBoard::FindMixerTrackCluster(const Track* pTrack,
                                       MixerTrackCluster** hMixerTrackCluster) const
-#else
-int MixerBoard::FindMixerTrackCluster(const WaveTrack* pLeftTrack,
-                                        MixerTrackCluster** hMixerTrackCluster) const
-#endif
 {
    *hMixerTrackCluster = NULL;
    for (unsigned int i = 0; i < mMixerTrackClusters.GetCount(); i++)
    {
-#ifdef EXPERIMENTAL_MIDI_OUT
       if (mMixerTrackClusters[i]->mTrack == pTrack)
-#else
-      if (mMixerTrackClusters[i]->mLeftTrack == pLeftTrack)
-#endif
       {
          *hMixerTrackCluster = mMixerTrackClusters[i];
          return i;
