@@ -103,8 +103,8 @@ class AUDACITY_DLL_API NoteTrack final : public Track {
    bool Shift(double t) /* not override */;
 
 #ifdef EXPERIMENTAL_MIDI_OUT
-   float GetGain() const { return mGain; }
-   void SetGain(float gain) { mGain = gain; }
+   float GetVelocity() const { return mVelocity; }
+   void SetVelocity(float velocity) { mVelocity = velocity; }
 #endif
 
    double NearestBeatTime(double time, double *beat) const;
@@ -170,11 +170,6 @@ class AUDACITY_DLL_API NoteTrack final : public Track {
    void StartVScroll();
    void VScroll(int start, int end);
 
-#ifdef EXPERIMENTAL_MIDI_OUT
-   wxRect GetGainPlacementRect() const { return mGainPlacementRect; }
-   void SetGainPlacementRect(const wxRect &r) { mGainPlacementRect = r; }
-#endif
-
    bool HandleXMLTag(const wxChar *tag, const wxChar **attrs) override;
    XMLTagHandler *HandleXMLChild(const wxChar *tag) override;
    void WriteXML(XMLWriter &xmlFile) const override;
@@ -207,7 +202,7 @@ class AUDACITY_DLL_API NoteTrack final : public Track {
    long mSerializationLength;
 
 #ifdef EXPERIMENTAL_MIDI_OUT
-   float mGain; // velocity offset
+   float mVelocity; // velocity offset
 #endif
 
    // mBottom is the Y offset of pitch 0 (normally off screen)
@@ -217,11 +212,6 @@ class AUDACITY_DLL_API NoteTrack final : public Track {
    int mPitchHeight;
    int mVisibleChannels; // bit set of visible channels
    int mLastMidiPosition;
-   wxRect mGainPlacementRect;
-
-protected:
-   virtual TrackControls *GetControls();
-   virtual TrackVRulerControls *GetVRulerControls();
 };
 
 #endif // USE_MIDI

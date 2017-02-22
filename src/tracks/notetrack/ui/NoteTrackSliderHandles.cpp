@@ -40,13 +40,13 @@ VelocitySliderHandle &VelocitySliderHandle::Instance()
 
 float VelocitySliderHandle::GetValue()
 {
-   return static_cast<NoteTrack *>(mpTrack)->GetGain();
+   return static_cast<NoteTrack *>(mpTrack)->GetVelocity();
 }
 
 UIHandle::Result VelocitySliderHandle::SetValue
 (AudacityProject *pProject, float newValue)
 {
-   static_cast<NoteTrack *>(mpTrack)->SetGain(newValue);
+   static_cast<NoteTrack *>(mpTrack)->SetVelocity(newValue);
    MixerBoard *const pMixerBoard = pProject->GetMixerBoard();
    if (pMixerBoard)
       pMixerBoard->UpdateGain(mpTrack);
