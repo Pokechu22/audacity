@@ -5114,7 +5114,6 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
       // DM: If it's a NoteTrack, it has special controls
       else if (t->GetKind() == Track::Note)
       {
-         wxRect midiRect;
 #ifdef EXPERIMENTAL_MIDI_OUT
          if (isleft && (MuteSoloFunc(t, rect, event.m_x, event.m_y, false) ||
                MuteSoloFunc(t, rect, event.m_x, event.m_y, true)))
@@ -5123,13 +5122,18 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
          if (isleft && VelocityFunc(t, rect, event, event.m_x, event.m_y))
             return;
 #endif
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
+         wxRect midiRect;
          mTrackInfo.GetTrackControlsRect(rect, midiRect);
-         if (midiRect.Contains(event.m_x, event.m_y) &&
-            ((NoteTrack *)t)->LabelClick(midiRect, event.m_x, event.m_y,
-            event.Button(wxMOUSE_BTN_RIGHT))) {
+
+         bool isright = event.Button(wxMOUSE_BTN_RIGHT);
+
+         if ((isleft || isright) && midiRect.Contains(event.m_x, event.m_y) &&
+               ((NoteTrack *)t)->LabelClick(rect, event.m_x, event.m_y, isright)) {
             Refresh(false);
             return;
          }
+#endif
       }
 #endif // USE_MIDI
 
@@ -7270,15 +7274,16 @@ void TrackPanel::DrawOutside(Track * t, wxDC * dc, const wxRect & rec,
 
 #ifdef USE_MIDI
    else if (bIsNote) {
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
       wxRect midiRect;
       mTrackInfo.GetTrackControlsRect(trackRect, midiRect);
       // Offset by height of Solo/Mute buttons:
       midiRect.y += 15;
       midiRect.height -= 21; // allow room for minimize button at bottom
 
-#ifdef EXPERIMENTAL_MIDI_OUT
       ((NoteTrack *)t)->DrawLabelControls(*dc, midiRect);
-
+#endif
+#ifdef EXPERIMENTAL_MIDI_OUT
       // Draw some lines for MuteSolo buttons (normally handled by DrawBordersWithin but not done for note tracks)
       if (rect.height > 48) {
          // Note: offset up by 34 units
