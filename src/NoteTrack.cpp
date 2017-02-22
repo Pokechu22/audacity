@@ -118,7 +118,9 @@ Track(projDirManager)
    mBottomNote = 24;
    mPitchHeight = 5;
 
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
    mVisibleChannels = ALL_CHANNELS;
+#endif
    mLastMidiPosition = 0;
 }
 
@@ -157,7 +159,9 @@ Track::Holder NoteTrack::Duplicate() const
    duplicate->SetBottomNote(mBottomNote);
    duplicate->SetPitchHeight(mPitchHeight);
    duplicate->mLastMidiPosition = mLastMidiPosition;
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
    duplicate->mVisibleChannels = mVisibleChannels;
+#endif
    duplicate->SetOffset(GetOffset());
 #ifdef EXPERIMENTAL_MIDI_OUT
    duplicate->SetVelocity(GetVelocity());
@@ -218,7 +222,11 @@ void NoteTrack::WarpAndTransposeNotes(double t0, double t1,
           // map all channel numbers mod 16. This will have no effect
           // on MIDI files, but it will allow users to at least select
           // all channels on non-MIDI event sequence data.
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
           IsVisibleChan(event->chan % 16)) {
+#else
+          true) {
+#endif
          event->set_pitch(event->get_pitch() + semitones);
       }
    }
@@ -237,6 +245,7 @@ void NoteTrack::WarpAndTransposeNotes(double t0, double t1,
    mSeq->convert_to_seconds();
 }
 
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
 const int cellWidth = 23, cellHeight = 16, labelYOffset = 34;
 
 
@@ -359,6 +368,7 @@ bool NoteTrack::LabelClick(const wxRect &rect, int mx, int my, bool right)
 
    return true;
 }
+#endif
 
 void NoteTrack::SetSequence(std::unique_ptr<Alg_seq> &&seq)
 {
@@ -425,11 +435,6 @@ void NoteTrack::PrintSequence()
    }
 
    fclose(debugOutput);
-}
-
-int NoteTrack::GetVisibleChannels()
-{
-   return mVisibleChannels;
 }
 
 Track::Holder NoteTrack::Cut(double t0, double t1)
@@ -762,6 +767,7 @@ bool NoteTrack::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
                   XMLValueChecker::IsGoodString(strValue) &&
                   Internat::CompatibleToDouble(strValue, &dblValue))
             SetOffset(dblValue);
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
          else if (!wxStrcmp(attr, wxT("visiblechannels"))) {
              if (!XMLValueChecker::IsGoodInt(strValue) ||
                  !strValue.ToLong(&nValue) ||
@@ -769,6 +775,7 @@ bool NoteTrack::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
                  return false;
              mVisibleChannels = nValue;
          }
+#endif
          else if (!wxStrcmp(attr, wxT("height")) &&
                   XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
             mHeight = nValue;
@@ -832,7 +839,9 @@ void NoteTrack::WriteXML(XMLWriter &xmlFile) const
    xmlFile.StartTag(wxT("notetrack"));
    xmlFile.WriteAttr(wxT("name"), saveme->mName);
    xmlFile.WriteAttr(wxT("offset"), saveme->GetOffset());
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
    xmlFile.WriteAttr(wxT("visiblechannels"), saveme->mVisibleChannels);
+#endif
    xmlFile.WriteAttr(wxT("height"), saveme->GetActualHeight());
    xmlFile.WriteAttr(wxT("minimized"), saveme->GetMinimized());
    xmlFile.WriteAttr(wxT("isSelected"), this->GetSelected());
