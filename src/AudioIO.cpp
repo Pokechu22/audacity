@@ -1001,7 +1001,6 @@ AudioIO::AudioIO()
    mMidiStreamActive = false;
    mSendMidiState = false;
    mIterator = NULL;
-   mMidiPlaySpeed = 1.0;
 
    mNumFrames = 0;
    mNumPauseFrames = 0;
@@ -2388,7 +2387,6 @@ void AudioIO::StopStream()
       }
 
       mIterator.reset(); // just in case someone tries to reference it
-      mMidiPlaySpeed = 1.0;
    }
 #endif
 
@@ -3007,6 +3005,9 @@ MidiThread::ExitCode MidiThread::Entry()
             if (gAudioIO->mNumPlaybackChannels != 0) {
                realTime -= 1; // with audio, MidiTime() runs ahead 1s
             }
+
+            // XXX Is this still true now?  It seems to break looping --Poke
+            //
             // The TrackPanel::OnTimer() method updates the time position
             // indicator every 200ms, so it tends to not advance the
             // indicator to the end of the selection (mT1) but instead stop
@@ -3014,15 +3015,20 @@ MidiThread::ExitCode MidiThread::Entry()
             // down and the indicator is removed, but for a brief time, the
             // indicator is clearly stopped before reaching mT1. To avoid
             // this, we do not set mMidiOutputComplete until we are actually
-            // 0.22s beyond mT1 (even though we stop playing at mT1. This
+            // 0.22s beyond mT1 (even though we stop playing at mT1). This
             // gives OnTimer() time to wake up and draw the final time
             // position at mT1 before shutting down the stream.
-            double timeAtSpeed = (realTime - gAudioIO->mT0) *
-                                 gAudioIO->mMidiPlaySpeed + gAudioIO->mT0;
+            const double loopDelay = 0.220;
+
+            double timeAtSpeed;
+            if (gAudioIO->mTimeTrack)
+               timeAtSpeed = gAudioIO->mTimeTrack->ComputeWarpedLength(gAudioIO->mT0, realTime);
+            else
+               timeAtSpeed = realTime;
 
             gAudioIO->mMidiOutputComplete =
                (gAudioIO->mPlayMode == gAudioIO->PLAY_STRAIGHT && // PRL:  what if scrubbing?
-                timeAtSpeed >= gAudioIO->mT1 + 0.220);
+                timeAtSpeed >= gAudioIO->mT1 + loopDelay);
             // !gAudioIO->mNextEvent);
          }
       }
@@ -3732,8 +3738,13 @@ void AudioIO::OutputEvent()
    int command = -1;
    int data1 = -1;
    int data2 = -1;
+
+   double eventTime;
+   if (mTimeTrack)
+      eventTime = mTimeTrack->ComputeWarpedLength(mT0, mNextEventTime);
+   else
+      eventTime = mNextEventTime;
    // 0.0005 is for rounding
-   double eventTime = (mNextEventTime - mT0) / mMidiPlaySpeed + mT0;
    double time = eventTime + PauseTime() + 0.0005 -
                  ((mMidiLatency + mSynthLatency) * 0.001);
 
@@ -3915,7 +3926,11 @@ void AudioIO::FillMidiBuffers()
       time = AudioTime() - PauseTime();
    } else {
       time = mT0 + Pt_Time() * 0.001 - PauseTime();
-      double timeAtSpeed = (time - mT0) * mMidiPlaySpeed + mT0;
+      double timeAtSpeed;
+      if (mTimeTrack)
+         timeAtSpeed = mTimeTrack->ComputeWarpedLength(mT0, time);
+      else
+         timeAtSpeed = time;
       if (mNumCaptureChannels <= 0) {
          // no audio callback, so move the time cursor here:
          double trackTime = timeAtSpeed - mMidiLoopOffset;
@@ -3941,8 +3956,8 @@ void AudioIO::FillMidiBuffers()
       time += MIDI_SLEEP * 0.001;
    }
    while (mNextEvent &&
-          (mNextEventTime - mT0) / mMidiPlaySpeed + mT0 < time +
-                           ((MIDI_SLEEP + mSynthLatency) * 0.001)) {
+          (mTimeTrack ? (mTimeTrack->ComputeWarpedLength(mT0, mNextEventTime) + mT0) : mNextEventTime)
+             < time + ((MIDI_SLEEP + mSynthLatency) * 0.001)) {
       OutputEvent();
       GetNextEvent();
    }
