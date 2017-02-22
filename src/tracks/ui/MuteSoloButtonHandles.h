@@ -2,16 +2,16 @@
 
 Audacity: A Digital Audio Editor
 
-WavelTrackButtonHandles.h
+MuteSoloButtonHandles.h
 
 Paul Licameli split from TrackPanel.cpp
 
 **********************************************************************/
 
-#ifndef __AUDACITY_WAVE_TRACK_BUTTON_HANDLES__
-#define __AUDACITY_WAVE_TRACK_BUTTON_HANDLES__
+#ifndef __AUDACITY_MUTE_SOLO_BUTTON_HANDLES__
+#define __AUDACITY_MUTE_SOLO_BUTTON_HANDLES__
 
-#include "../../ui/ButtonHandle.h"
+#include "ButtonHandle.h"
 
 struct HitTestResult;
 
@@ -28,11 +28,11 @@ protected:
    virtual Result CommitChanges
       (const wxMouseEvent &event, AudacityProject *pProject, wxWindow *pParent);
 
-   bool StopsOnKeystroke () override { return true; }
+   bool StopsOnKeystroke() override { return true; }
 
 public:
    static HitTestResult HitTest
-      (const wxMouseEvent &event, const wxRect &rect, const AudacityProject *pProject);
+      (const wxMouseEvent &event, const wxRect &rect, const AudacityProject *pProject, int trackKind);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -50,11 +50,11 @@ protected:
    virtual Result CommitChanges
       (const wxMouseEvent &event, AudacityProject *pProject, wxWindow *pParent);
 
-   bool StopsOnKeystroke () override { return true; }
+   bool StopsOnKeystroke() override { return true; }
 
 public:
    static HitTestResult HitTest
-      (const wxMouseEvent &event, const wxRect &rect, const AudacityProject *pProject);
+      (const wxMouseEvent &event, const wxRect &rect, const AudacityProject *pProject, int trackKind);
 };
 
 #endif

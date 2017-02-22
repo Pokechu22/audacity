@@ -10,7 +10,7 @@ Paul Licameli split from TrackPanel.cpp
 
 #include "../../../Audacity.h"
 #include "WaveTrackControls.h"
-#include "WaveTrackButtonHandles.h"
+#include "../../ui/MuteSoloButtonHandles.h"
 #include "WaveTrackSliderHandles.h"
 
 #include "../../../AudioIO.h"
@@ -86,10 +86,10 @@ HitTestResult WaveTrackControls::HitTest
       if (!bTrackSelClick) {
          if (mpTrack->GetKind() == Track::Wave) {
             HitTestResult result;
-            if (NULL != (result = MuteButtonHandle::HitTest(event, rect, pProject)).handle)
+            if (NULL != (result = MuteButtonHandle::HitTest(event, rect, pProject, Track::Wave)).handle)
                return result;
 
-            if (NULL != (result = SoloButtonHandle::HitTest(event, rect, pProject)).handle)
+            if (NULL != (result = SoloButtonHandle::HitTest(event, rect, pProject, Track::Wave)).handle)
                return result;
 
             if (NULL != (result =

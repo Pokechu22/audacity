@@ -2,7 +2,7 @@
 
 Audacity: A Digital Audio Editor
 
-WavelTrackSliderHandles.h
+WaveTrackSliderHandles.h
 
 Paul Licameli split from TrackPanel.cpp
 

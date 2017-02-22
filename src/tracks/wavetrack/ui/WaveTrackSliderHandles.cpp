@@ -1,5 +1,3 @@
-#include "WaveTrackSliderHandles.h"
-
 /**********************************************************************
 
 Audacity: A Digital Audio Editor
@@ -39,39 +37,22 @@ GainSliderHandle &GainSliderHandle::Instance()
 
 float GainSliderHandle::GetValue()
 {
-   return mpTrack->GetGain();
+   return static_cast<WaveTrack*>(mpTrack)->GetGain();
 }
 
 UIHandle::Result GainSliderHandle::SetValue
 (AudacityProject *pProject, float newValue)
 {
-#ifdef EXPERIMENTAL_MIDI_OUT
-   if (capturedTrack->GetKind() == Track::Wave)
-#endif
-   {
-      mpTrack->SetGain(newValue);
+   static_cast<WaveTrack*>(mpTrack)->SetGain(newValue);
 
-      // Assume linked track is wave or null
-      const auto link = static_cast<WaveTrack*>(mpTrack->GetLink());
-      if (link)
-         link->SetGain(newValue);
+   // Assume linked track is wave or null
+   const auto link = static_cast<WaveTrack*>(mpTrack->GetLink());
+   if (link)
+      link->SetGain(newValue);
 
-      MixerBoard *const pMixerBoard = pProject->GetMixerBoard();
-      if (pMixerBoard)
-         pMixerBoard->UpdateGain(mpTrack);
-   }
-#ifdef EXPERIMENTAL_MIDI_OUT
-   else {
-      // mpTrack is not wave, so assume it is note
-      static_cast<NoteTrack *>(mpTrack)->SetGain(newValue);
-#ifdef EXPERIMENTAL_MIXER_BOARD
-      if (pMixerBoard)
-         // probably should modify UpdateGain to take a track that is
-         // either a WaveTrack or a NoteTrack.
-         pMixerBoard->UpdateGain(static_cast<WaveTrack*>(mpTrack));
-#endif
-   }
-#endif
+   MixerBoard *const pMixerBoard = pProject->GetMixerBoard();
+   if (pMixerBoard)
+      pMixerBoard->UpdateGain(mpTrack);
 
    return RefreshCode::RefreshNone;
 }
@@ -79,17 +60,7 @@ UIHandle::Result GainSliderHandle::SetValue
 UIHandle::Result GainSliderHandle::CommitChanges
 (const wxMouseEvent &, AudacityProject *pProject)
 {
-#ifdef EXPERIMENTAL_MIDI_OUT
-   if (capturedTrack->GetKind() == Track::Wave)
-#endif
-   {
-      pProject->PushState(_("Moved gain slider"), _("Gain"), UndoPush::CONSOLIDATE);
-   }
-#ifdef EXPERIMENTAL_MIDI_OUT
-   else {
-      pProject->PushState(_("Moved velocity slider"), _("Velocity"), true);
-   }
-#endif
+   pProject->PushState(_("Moved gain slider"), _("Gain"), UndoPush::CONSOLIDATE);
 
    return RefreshCode::RefreshCell;
 }
@@ -101,6 +72,8 @@ HitTestResult GainSliderHandle::HitTest
    if (!event.Button(wxMOUSE_BTN_LEFT))
       return HitTestResult();
 
+   wxASSERT(pTrack->GetKind() == Track::Wave);
+
    wxRect sliderRect;
    TrackInfo::GetGainRect(rect, sliderRect);
    if (sliderRect.Contains(event.m_x, event.m_y)) {
@@ -108,7 +81,7 @@ HitTestResult GainSliderHandle::HitTest
       LWSlider *const slider =
          pProject->GetTrackPanel()->GetTrackInfo()->GainSlider(wavetrack, true);
       Instance().mpSlider = slider;
-      Instance().mpTrack = static_cast<WaveTrack*>(pTrack);
+      Instance().mpTrack = wavetrack;
       return HitTestResult(
          Preview(),
          &Instance()
@@ -137,7 +110,7 @@ PanSliderHandle &PanSliderHandle::Instance()
 
 float PanSliderHandle::GetValue()
 {
-   return mpTrack->GetPan();
+   return static_cast<WaveTrack*>(mpTrack)->GetPan();
 }
 
 UIHandle::Result PanSliderHandle::SetValue(AudacityProject *pProject, float newValue)
@@ -146,25 +119,20 @@ UIHandle::Result PanSliderHandle::SetValue(AudacityProject *pProject, float newV
    bool panZero = false;
 #endif
 
-#ifdef EXPERIMENTAL_MIDI_OUT
-   if (capturedTrack->GetKind() == Track::Wave)
-#endif
-   {
 #ifdef EXPERIMENTAL_OUTPUT_DISPLAY
-      panZero = static_cast<WaveTrack*>(mpTrack)->SetPan(newValue);
+   panZero = static_cast<WaveTrack*>(mpTrack)->SetPan(newValue);
 #else
-      mpTrack->SetPan(newValue);
+   static_cast<WaveTrack*>(mpTrack)->SetPan(newValue);
 #endif
 
-      // Assume linked track is wave or null
-      const auto link = static_cast<WaveTrack*>(mpTrack->GetLink());
-      if (link)
-         link->SetPan(newValue);
+   // Assume linked track is wave or null
+   const auto link = static_cast<WaveTrack*>(mpTrack->GetLink());
+   if (link)
+      link->SetPan(newValue);
 
-      MixerBoard *const pMixerBoard = pProject->GetMixerBoard();
-      if (pMixerBoard)
-         pMixerBoard->UpdatePan(mpTrack);
-   }
+   MixerBoard *const pMixerBoard = pProject->GetMixerBoard();
+   if (pMixerBoard)
+      pMixerBoard->UpdatePan(mpTrack);
 
    using namespace RefreshCode;
    Result result = RefreshNone;
@@ -177,17 +145,7 @@ UIHandle::Result PanSliderHandle::SetValue(AudacityProject *pProject, float newV
 UIHandle::Result PanSliderHandle::CommitChanges
 (const wxMouseEvent &, AudacityProject *pProject)
 {
-#ifdef EXPERIMENTAL_MIDI_OUT
-   if (capturedTrack->GetKind() == Track::Wave)
-#endif
-   {
-      pProject->PushState(_("Moved pan slider"), _("Pan"), UndoPush::CONSOLIDATE);
-   }
-#ifdef EXPERIMENTAL_MIDI_OUT
-   else {
-      pProject->PushState(_("Moved velocity slider"), _("Velocity"), UndoPush::CONSOLIDATE);
-   }
-#endif
+   pProject->PushState(_("Moved pan slider"), _("Pan"), UndoPush::CONSOLIDATE);
 
    return RefreshCode::RefreshCell;
 }
@@ -199,6 +157,8 @@ HitTestResult PanSliderHandle::HitTest
    if (!event.Button(wxMOUSE_BTN_LEFT))
       return HitTestResult();
 
+   wxASSERT(pTrack->GetKind() == Track::Wave);
+
    wxRect sliderRect;
    TrackInfo::GetPanRect(rect, sliderRect);
    if (sliderRect.Contains(event.m_x, event.m_y)) {
@@ -206,7 +166,7 @@ HitTestResult PanSliderHandle::HitTest
       LWSlider *const slider =
          pProject->GetTrackPanel()->GetTrackInfo()->PanSlider(wavetrack, true);
       Instance().mpSlider = slider;
-      Instance().mpTrack = static_cast<WaveTrack*>(pTrack);
+      Instance().mpTrack = wavetrack;
       return HitTestResult(
          Preview(),
          &Instance()

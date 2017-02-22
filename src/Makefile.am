@@ -563,6 +563,8 @@ audacity_SOURCES = \
 	tracks/notetrack/ui/NoteTrackUI.cpp \
 	tracks/notetrack/ui/NoteTrackVRulerControls.cpp \
 	tracks/notetrack/ui/NoteTrackVRulerControls.h \
+	tracks/wavetrack/ui/NoteTrackSliderHandles.cpp \
+	tracks/wavetrack/ui/NoteTrackSliderHandles.h \
 	tracks/notetrack/ui/StretchHandle.cpp \
 	tracks/notetrack/ui/StretchHandle.h \
 	tracks/timetrack/ui/TimeTrackControls.cpp \
@@ -580,6 +582,8 @@ audacity_SOURCES = \
 	tracks/ui/EditCursorOverlay.h \
 	tracks/ui/EnvelopeHandle.cpp \
 	tracks/ui/EnvelopeHandle.h \
+	tracks/wavetrack/ui/MuteSoloButtonHandles.cpp \
+	tracks/wavetrack/ui/MuteSoloButtonHandles.h \
 	tracks/ui/PlayIndicatorOverlay.cpp \
 	tracks/ui/PlayIndicatorOverlay.h \
 	tracks/ui/Scrubbing.cpp \
@@ -605,8 +609,6 @@ audacity_SOURCES = \
 	tracks/wavetrack/ui/CutlineHandle.h \
 	tracks/wavetrack/ui/SampleHandle.cpp \
 	tracks/wavetrack/ui/SampleHandle.h \
-	tracks/wavetrack/ui/WaveTrackButtonHandles.cpp \
-	tracks/wavetrack/ui/WaveTrackButtonHandles.h \
 	tracks/wavetrack/ui/WaveTrackControls.cpp \
 	tracks/wavetrack/ui/WaveTrackControls.h \
 	tracks/wavetrack/ui/WaveTrackVRulerControls.cpp \

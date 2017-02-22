@@ -144,7 +144,7 @@ UIHandle::Result TrackSelectHandle::Drag
 #ifdef EXPERIMENTAL_MIDI_OUT
       if (pMixerBoard && (mpTrack->GetKind() == Track::Wave ||
          mpTrack->GetKind() == Track::Note))
-         pMixerBoard->MoveTrackCluster(mCapturedTrack, true /* up */);
+         pMixerBoard->MoveTrackCluster(mpTrack, true /* up */);
 #else
       if (pMixerBoard && (mpTrack->GetKind() == Track::Wave))
          pMixerBoard->MoveTrackCluster(static_cast<WaveTrack*>(mpTrack), true /* up */);
@@ -158,7 +158,7 @@ UIHandle::Result TrackSelectHandle::Drag
 #ifdef EXPERIMENTAL_MIDI_OUT
       if (pMixerBoard && (mpTrack->GetKind() == Track::Wave ||
          mpTrack->GetKind() == Track::Note))
-         pMixerBoard->MoveTrackCluster(mCapturedTrack, false /* down */);
+         pMixerBoard->MoveTrackCluster(mpTrack, false /* down */);
 #else
       if (pMixerBoard && (mpTrack->GetKind() == Track::Wave))
          pMixerBoard->MoveTrackCluster(static_cast<WaveTrack*>(mpTrack), false /* down */);

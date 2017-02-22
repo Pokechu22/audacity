@@ -237,19 +237,17 @@ void NoteTrack::WarpAndTransposeNotes(double t0, double t1,
    mSeq->convert_to_seconds();
 }
 
+const int cellWidth = 23, cellHeight = 16;
 
 
-int NoteTrack::DrawLabelControls(wxDC & dc, wxRect r)
+void NoteTrack::DrawLabelControls(wxDC & dc, wxRect rect)
 {
-   int wid = 23;
-   int ht = 16;
-
-   if (r.height < ht * 4) {
-      return r.y + 5 + ht * 4;
+   if (rect.height < cellHeight * 4) {
+      return;
    }
 
-   int x = r.x + (r.width / 2 - wid * 2) + 2;
-   int y = r.y + 5;
+   int x = rect.x;
+   int y = rect.y;
 
    wxRect box;
    for (int row = 0; row < 4; row++) {
@@ -258,10 +256,10 @@ int NoteTrack::DrawLabelControls(wxDC & dc, wxRect r)
          // used by AColor and button labels
          int chanName = row * 4 + col + 1;
 
-         box.x = x + col * wid;
-         box.y = y + row * ht;
-         box.width = wid;
-         box.height = ht;
+         box.x = x + col * cellWidth;
+         box.y = y + row * cellHeight;
+         box.width = cellWidth;
+         box.height = cellHeight;
 
          if (IsVisibleChan(chanName - 1)) {
             AColor::MIDIChannel(&dc, chanName);
@@ -314,50 +312,17 @@ int NoteTrack::DrawLabelControls(wxDC & dc, wxRect r)
 
          }
 
-         wxString t;
+         wxString text;
          wxCoord w;
          wxCoord h;
 
-         t.Printf(wxT("%d"), chanName);
-         dc.GetTextExtent(t, &w, &h);
+         text.Printf(wxT("%d"), chanName);
+         dc.GetTextExtent(text, &w, &h);
 
-         dc.DrawText(t, box.x + (box.width - w) / 2, box.y + (box.height - h) / 2);
+         dc.DrawText(text, box.x + (box.width - w) / 2, box.y + (box.height - h) / 2);
       }
    }
    AColor::MIDIChannel(&dc, 0); // always return with gray color selected
-   return box.GetBottom();
-}
-
-bool NoteTrack::LabelClick(wxRect rect, int mx, int my, bool right)
-{
-   int wid = 23;
-   int ht = 16;
-
-   if (r.height < ht * 4)
-      return false;
-
-   int x = r.x + (r.width / 2 - wid * 2);
-   int y = r.y + 1;
-   // after adding Mute and Solo buttons, mapping is broken, so hack in the offset
-   y += 12;
-
-   int col = (mx - x) / wid;
-   int row = (my - y) / ht;
-
-   if (row < 0 || row >= 4 || col < 0 || col >= 4)
-      return false;
-
-   int channel = row * 4 + col;
-
-   if (right) {
-      if (mVisibleChannels == CHANNEL_BIT(channel))
-         mVisibleChannels = ALL_CHANNELS;
-      else
-         mVisibleChannels = CHANNEL_BIT(channel);
-   } else
-      ToggleVisibleChan(channel);
-
-   return true;
 }
 
 void NoteTrack::SetSequence(std::unique_ptr<Alg_seq> &&seq)
@@ -435,6 +400,11 @@ void NoteTrack::PrintSequence()
 int NoteTrack::GetVisibleChannels()
 {
    return mVisibleChannels;
+}
+
+void NoteTrack::SetVisibleChannels(int value)
+{
+   mVisibleChannels = value;
 }
 
 Track::Holder NoteTrack::Cut(double t0, double t1)

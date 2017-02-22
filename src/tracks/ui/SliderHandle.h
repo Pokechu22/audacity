@@ -14,7 +14,7 @@ Paul Licameli
 #include "../../UIHandle.h"
 
 class LWSlider;
-class WaveTrack;
+class Track;
 
 class SliderHandle : public UIHandle
 {
@@ -56,7 +56,7 @@ protected:
    virtual Result Cancel(AudacityProject *pProject);
 
    // Derived track is expected to set these two before Click():
-   WaveTrack *mpTrack;
+   Track *mpTrack;
    LWSlider *mpSlider;
 
    float mStartingValue;

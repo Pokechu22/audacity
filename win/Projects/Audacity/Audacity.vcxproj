@@ -231,6 +231,7 @@
     <ClCompile Include="..\..\..\src\tracks\labeltrack\ui\LabelTrackUI.cpp" />
     <ClCompile Include="..\..\..\src\tracks\labeltrack\ui\LabelTrackVRulerControls.cpp" />
     <ClCompile Include="..\..\..\src\tracks\notetrack\ui\NoteTrackControls.cpp" />
+    <ClCompile Include="..\..\..\src\tracks\notetrack\ui\NoteTrackSliderHandles.cpp" />
     <ClCompile Include="..\..\..\src\tracks\notetrack\ui\NoteTrackUI.cpp" />
     <ClCompile Include="..\..\..\src\tracks\notetrack\ui\NoteTrackVRulerControls.cpp" />
     <ClCompile Include="..\..\..\src\tracks\notetrack\ui\StretchHandle.cpp" />
@@ -242,6 +243,7 @@
     <ClCompile Include="..\..\..\src\tracks\ui\CommonTrackPanelCell.cpp" />
     <ClCompile Include="..\..\..\src\tracks\ui\EditCursorOverlay.cpp" />
     <ClCompile Include="..\..\..\src\tracks\ui\EnvelopeHandle.cpp" />
+    <ClCompile Include="..\..\..\src\tracks\ui\MuteSoloButtonHandles.cpp" />
     <ClCompile Include="..\..\..\src\tracks\ui\PlayIndicatorOverlay.cpp" />
     <ClCompile Include="..\..\..\src\tracks\ui\Scrubbing.cpp" />
     <ClCompile Include="..\..\..\src\tracks\ui\SelectHandle.cpp" />
@@ -255,7 +257,6 @@
     <ClCompile Include="..\..\..\src\tracks\ui\ZoomHandle.cpp" />
     <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\CutlineHandle.cpp" />
     <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\SampleHandle.cpp" />
-    <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackButtonHandles.cpp" />
     <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackControls.cpp" />
     <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackSliderHandles.cpp" />
     <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackUI.cpp" />
@@ -506,7 +507,9 @@
     <ClInclude Include="..\..\..\src\tracks\labeltrack\ui\LabelDefaultClickHandle.h" />
     <ClInclude Include="..\..\..\src\tracks\labeltrack\ui\LabelGlyphHandle.h" />
     <ClInclude Include="..\..\..\src\tracks\labeltrack\ui\LabelTextHandle.h" />
+    <ClInclude Include="..\..\..\src\tracks\notetrack\ui\NoteTrackSliderHandles.h" />
     <ClInclude Include="..\..\..\src\tracks\notetrack\ui\StretchHandle.h" />
+    <ClInclude Include="..\..\..\src\tracks\ui\MuteSoloButtonHandles.h" />
     <ClInclude Include="..\..\..\src\tracks\ui\SelectHandle.h" />
     <ClInclude Include="..\..\..\src\TranslatableStringArray.h" />
     <ClInclude Include="..\..\..\src\tracks\ui\BackgroundCell.h" />
@@ -532,7 +535,6 @@
     <ClInclude Include="..\..\..\src\tracks\ui\ZoomHandle.h" />
     <ClInclude Include="..\..\..\src\tracks\wavetrack\ui\CutlineHandle.h" />
     <ClInclude Include="..\..\..\src\tracks\wavetrack\ui\SampleHandle.h" />
-    <ClInclude Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackButtonHandles.h" />
     <ClInclude Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackControls.h" />
     <ClInclude Include="..\..\..\src\tracks\timetrack\ui\TimeTrackVRulerControls.h" />
     <ClInclude Include="..\..\..\src\tracks\ui\TrackVRulerControls.h" />

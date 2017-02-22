@@ -5,11 +5,16 @@ Audacity: A Digital Audio Editor
 NoteTrackControls.cpp
 
 Paul Licameli split from TrackPanel.cpp
+Poke spit from NoteTrack.cpp
 
 **********************************************************************/
 
 #include "../../../Audacity.h"
+#include "../../../Experimental.h"
+
 #include "NoteTrackControls.h"
+#include "../../ui/MuteSoloButtonHandles.h"
+#include "NoteTrackSliderHandles.h"
 #include "../../../HitTestResult.h"
 #include "../../../NoteTrack.h"
 #include "../../../widgets/PopupMenuTable.h"
@@ -88,7 +93,7 @@ HitTestResult NoteTrackClickHandle::HitTest
 }
 
 UIHandle::Result NoteTrackClickHandle::Click
-(const TrackPanelMouseEvent &, AudacityProject *)
+(const TrackPanelMouseEvent & ev, AudacityProject *)
 {
    return RefreshCode::RefreshNone;
 }
@@ -106,21 +111,45 @@ HitTestPreview NoteTrackClickHandle::Preview
    return HitTestPreview();
 }
 
+const int cellWidth = 23, cellHeight = 16, labelYOffset = 34;
 UIHandle::Result NoteTrackClickHandle::Release
 (const TrackPanelMouseEvent &evt, AudacityProject *, wxWindow *)
 {
    using namespace RefreshCode;
+   // XXX Does not generate an undo item
 
    if (!mpTrack)
       return RefreshNone;
 
-   const wxMouseEvent &event = evt.event;
-   if (mpTrack->LabelClick(mRect, event.m_x, event.m_y,
-      event.Button(wxMOUSE_BTN_RIGHT))) {
-      // No undo items needed??
-      return RefreshAll;
+   auto rect = evt.rect;
+   if (rect.height < labelYOffset + cellHeight * 4 + 20)
+      return RefreshNone;
+
+   int x = rect.x + (rect.width / 2 - cellWidth * 2);
+   int y = rect.y + labelYOffset;
+
+   // Can't compare row/col with 0 because division rounds negative numbers towards 0
+   if (evt.event.GetX() - x < 0 || evt.event.GetY() - y < 0)
+      return RefreshNone;
+
+   int col = (evt.event.GetX() - x) / cellWidth;
+   int row = (evt.event.GetY() - y) / cellHeight;
+
+   if (row >= 4 || col >= 4)
+      return RefreshNone;
+
+   int channel = row * 4 + col;
+
+   if (evt.event.Button(wxMOUSE_BTN_RIGHT)) {
+      if (mpTrack->GetVisibleChannels() == CHANNEL_BIT(channel))
+         mpTrack->SetVisibleChannels(ALL_CHANNELS);
+      else
+         mpTrack->SetVisibleChannels(CHANNEL_BIT(channel));
    }
-   return RefreshNone;
+   else
+      mpTrack->ToggleVisibleChan(channel);
+
+   return RefreshCell;
 }
 
 UIHandle::Result NoteTrackClickHandle::Cancel(AudacityProject *)
@@ -176,7 +205,6 @@ HitTestResult NoteTrackControls::HitTest
          TrackInfo::TrackSelFunc(GetTrack(), rect, event.m_x, event.m_y);
 
       if (!bTrackSelClick) {
-#ifdef USE_MIDI
          // DM: If it's a NoteTrack, it has special controls
          if (mpTrack->GetKind() == Track::Note) {
 
@@ -186,28 +214,17 @@ HitTestResult NoteTrackControls::HitTest
                return result;
 
 #ifdef EXPERIMENTAL_MIDI_OUT
-            // TODO:  rewrite the following analogously to WaveTrackControls::HitTest
-            // So that this can be compiled again
+            if (NULL != (result = MuteButtonHandle::HitTest(event, rect, pProject, Track::Note)).handle)
+               return result;
 
-               // this is an awful hack: make a NEW rectangle at an offset because
-               // MuteSoloFunc thinks buttons are located below some text, e.g.
-               // "Mono, 44100Hz 32-bit float", but this is not true for a Note track
-               wxRect muteSoloRect(rect);
-               muteSoloRect.y -= 34; // subtract the height of wave track text
-               if (MuteSoloFunc(t, muteSoloRect, event.m_x, event.m_y, false) ||
-                   MuteSoloFunc(t, muteSoloRect, event.m_x, event.m_y, true))
-                  return;
+            if (NULL != (result = SoloButtonHandle::HitTest(event, rect, pProject, Track::Note)).handle)
+               return result;
 
-               // this is a similar hack: GainFunc expects a Wave track slider, so it's
-               // looking in the wrong place. We pass it a bogus rectangle created when
-               // the slider was placed to "fake" GainFunc into finding the slider in
-               // its actual location.
-               if (GainFunc(t, ((NoteTrack *) t)->GetGainPlacementRect(),
-                            event, event.m_x, event.m_y))
-                  return;
+            if (NULL != (result =
+               VelocitySliderHandle::HitTest(event, rect, pProject, mpTrack)).handle)
+               return result;
 #endif
          }
-#endif
       }
    }
 

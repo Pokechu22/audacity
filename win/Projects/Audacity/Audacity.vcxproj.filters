@@ -1004,9 +1004,6 @@
     <ClCompile Include="..\..\..\src\tracks\ui\SliderHandle.cpp">
       <Filter>src\tracks\ui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackButtonHandles.cpp">
-      <Filter>src\tracks\wavetrack\ui</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\tracks\ui\TrackButtonHandles.cpp">
       <Filter>src\tracks\ui</Filter>
     </ClCompile>
@@ -1032,6 +1029,12 @@
       <Filter>src\tracks\ui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\tracks\notetrack\ui\StretchHandle.cpp">
+      <Filter>src\tracks\notetrack\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\tracks\ui\MuteSoloButtonHandles.cpp">
+      <Filter>src\tracks\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\tracks\notetrack\ui\NoteTrackSliderHandles.cpp">
       <Filter>src\tracks\notetrack\ui</Filter>
     </ClCompile>
   </ItemGroup>
@@ -2041,9 +2044,6 @@
     <ClInclude Include="..\..\..\src\tracks\ui\SliderHandle.h">
       <Filter>src\tracks\ui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\tracks\wavetrack\ui\WaveTrackButtonHandles.h">
-      <Filter>src\tracks\wavetrack\ui</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\tracks\ui\TrackButtonHandles.h">
       <Filter>src\tracks\ui</Filter>
     </ClInclude>
@@ -2070,6 +2070,14 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\tracks\ui\CommonTrackPanelCell.h" />
     <ClInclude Include="..\..\..\src\tracks\notetrack\ui\StretchHandle.h">
+      <Filter>src\tracks\notetrack\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\tracks\ui\CommonTrackPanelCell.h" />
+    <ClInclude Include="..\..\..\src\TranslatableStringArray.h" />
+    <ClInclude Include="..\..\..\src\tracks\ui\MuteSoloButtonHandles.h">
+      <Filter>src\tracks\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\tracks\notetrack\ui\NoteTrackSliderHandles.h">
       <Filter>src\tracks\notetrack\ui</Filter>
     </ClInclude>
   </ItemGroup>
