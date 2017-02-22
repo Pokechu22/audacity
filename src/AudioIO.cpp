@@ -28,8 +28,8 @@
   To highlight this deliniation, the file is divided into three parts
   based on what thread context each function is intended to run in.
 
-  \par EXPERIMENTAL_MIDI_PLAYBACK
-  If EXPERIMENTAL_MIDI_PLAYBACK is defined, this class also manages
+  \par EXPERIMENTAL_MIDI_OUT
+  If EXPERIMENTAL_MIDI_OUT is defined, this class also manages
   MIDI playback. The reason for putting MIDI here rather than in, say,
   class MidiIO, is that there is no high-level synchronization and
   transport architecture, so Audio and MIDI must be coupled in order
@@ -3886,8 +3886,8 @@ void AudioIO::FillMidiBuffers()
          hasSolo = true;
          break;
       }
-   int numMidiPlaybackTracks = gAudioIO->mMidiPlaybackTracks.size();
-   for(t = 0; t < numMidiPlaybackTracks; t++ )
+   auto numMidiPlaybackTracks = gAudioIO->mMidiPlaybackTracks.size();
+   for(unsigned t = 0; t < numMidiPlaybackTracks; t++ )
       if( gAudioIO->mMidiPlaybackTracks[t]->GetSolo() ) {
          hasSolo = true;
          break;
@@ -4359,15 +4359,15 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
             if( gAudioIO->mPlaybackTracks[t]->GetSolo() )
                numSolo++;
 #ifdef EXPERIMENTAL_MIDI_OUT
-         int numMidiPlaybackTracks = gAudioIO->mMidiPlaybackTracks.size();
-         for( t = 0; t < numMidiPlaybackTracks; t++ )
+         auto numMidiPlaybackTracks = gAudioIO->mMidiPlaybackTracks.size();
+         for(unsigned t = 0; t < numMidiPlaybackTracks; t++ )
             if( gAudioIO->mMidiPlaybackTracks[t]->GetSolo() )
                numSolo++;
 #endif
 
          const WaveTrack **chans = (const WaveTrack **) alloca(numPlaybackChannels * sizeof(WaveTrack *));
          float **tempBufs = (float **) alloca(numPlaybackChannels * sizeof(float *));
-         for (int c = 0; c < numPlaybackChannels; c++)
+         for (unsigned c = 0; c < numPlaybackChannels; c++)
          {
             tempBufs[c] = (float *) alloca(framesPerBuffer * sizeof(float));
          }
