@@ -4977,9 +4977,7 @@ void TrackPanel::HandleVelocitySlider(wxMouseEvent &event)
    MixerBoard* pMixerBoard = this->GetMixerBoard(); // Update mixer board, too.
 
    if (pMixerBoard) {
-      // probably should modify UpdateGain to take a track that is
-      // either a WaveTrack or a NoteTrack.
-      pMixerBoard->UpdateGain(capturedTrack);
+      pMixerBoard->UpdateVelocity(capturedTrack);
    }
    RefreshTrack(capturedTrack);
    if (event.ButtonUp()) {
