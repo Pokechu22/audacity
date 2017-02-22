@@ -49,7 +49,7 @@ UIHandle::Result VelocitySliderHandle::SetValue
    static_cast<NoteTrack *>(mpTrack)->SetVelocity(newValue);
    MixerBoard *const pMixerBoard = pProject->GetMixerBoard();
    if (pMixerBoard)
-      pMixerBoard->UpdateGain(mpTrack);
+      pMixerBoard->UpdateVelocity(static_cast<NoteTrack *>(mpTrack));
 
    return RefreshCode::RefreshNone;
 }

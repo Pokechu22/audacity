@@ -52,7 +52,7 @@ UIHandle::Result GainSliderHandle::SetValue
 
    MixerBoard *const pMixerBoard = pProject->GetMixerBoard();
    if (pMixerBoard)
-      pMixerBoard->UpdateGain(mpTrack);
+      pMixerBoard->UpdateGain(static_cast<WaveTrack *>(mpTrack));
 
    return RefreshCode::RefreshNone;
 }
@@ -132,7 +132,7 @@ UIHandle::Result PanSliderHandle::SetValue(AudacityProject *pProject, float newV
 
    MixerBoard *const pMixerBoard = pProject->GetMixerBoard();
    if (pMixerBoard)
-      pMixerBoard->UpdatePan(mpTrack);
+      pMixerBoard->UpdatePan(static_cast<WaveTrack *>(mpTrack));
 
    using namespace RefreshCode;
    Result result = RefreshNone;
