@@ -5089,12 +5089,14 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
          if (VelocityFunc(t, rect, event, event.m_x, event.m_y))
             return;
 #endif
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
          if (rect.Contains(event.m_x, event.m_y) &&
             ((NoteTrack *)t)->LabelClick(rect, event.m_x, event.m_y,
             event.Button(wxMOUSE_BTN_RIGHT))) {
             Refresh(false);
             return;
          }
+#endif
       }
 #endif // USE_MIDI
 
@@ -7278,9 +7280,10 @@ void TrackPanel::DrawOutside(Track * t, wxDC * dc, const wxRect & rec,
 
 #ifdef USE_MIDI
    else if (bIsNote) {
-#ifdef EXPERIMENTAL_MIDI_OUT
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
       ((NoteTrack *)t)->DrawLabelControls(*dc, rect);
-
+#endif
+#ifdef EXPERIMENTAL_MIDI_OUT
       // Draw some lines for MuteSolo buttons (normally handled by DrawBordersWithin but not done for note tracks)
       if (rect.height > 48) {
          // Note: offset up by 34 units
