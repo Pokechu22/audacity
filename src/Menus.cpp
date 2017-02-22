@@ -704,7 +704,7 @@ void AudacityProject::CreateMenusAndCommands()
          AudioIONotBusyFlag);
 
       c->AddItem(wxT("Karaoke"), _("&Karaoke..."), FN(OnKaraoke), LabelTracksExistFlag, LabelTracksExistFlag);
-      c->AddItem(wxT("MixerBoard"), _("&Mixer Board..."), FN(OnMixerBoard), WaveTracksExistFlag, WaveTracksExistFlag);
+      c->AddItem(wxT("MixerBoard"), _("&Mixer Board..."), FN(OnMixerBoard), AudioTracksExistFlag, AudioTracksExistFlag);
 
       c->AddSeparator();
 
@@ -1760,6 +1760,7 @@ CommandFlag AudacityProject::GetUpdateFlags(bool checkActive)
       }
       else if (t->GetKind() == Track::Wave) {
          flags |= WaveTracksExistFlag;
+         flags |= AudioTracksExistFlag;
          if (t->GetSelected()) {
             flags |= TracksSelectedFlag;
             if (t->GetLinked()) {
@@ -1777,6 +1778,7 @@ CommandFlag AudacityProject::GetUpdateFlags(bool checkActive)
          NoteTrack *nt = (NoteTrack *) t;
 
          flags |= NoteTracksExistFlag;
+         flags |= AudioTracksExistFlag;
 
          if (nt->GetSelected()) {
             flags |= TracksSelectedFlag;
@@ -6773,8 +6775,12 @@ void AudacityProject::OnRemoveTracks()
 
    while (t) {
       if (t->GetSelected()) {
+#ifdef EXPERIMENTAL_MIDI_OUT
+         if (mMixerBoard && (t->GetKind() == Track::Wave || t->GetKind() == Track::Note))
+#else
          if (mMixerBoard && (t->GetKind() == Track::Wave))
-            mMixerBoard->RemoveTrackCluster((WaveTrack*)t);
+#endif
+            mMixerBoard->RemoveTrackCluster(t);
          if (!f)
             f = l;         // Capture the track preceeding the first removed track
          t = iter.RemoveCurrent();
