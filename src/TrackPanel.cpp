@@ -4981,7 +4981,7 @@ void TrackPanel::HandleVelocitySlider(wxMouseEvent &event)
       mMouseCapture = IsUncaptured;
 
    float newValue = slider->Get();
-   capturedTrack->SetGain(newValue);
+   capturedTrack->SetVelocity(newValue);
 
    MixerBoard* pMixerBoard = this->GetMixerBoard(); // Update mixer board, too.
 
@@ -9456,7 +9456,7 @@ LWSlider * TrackInfo::VelocitySlider(NoteTrack *t, bool captured) const
    GetVelocityRect(rect, sliderRect);
 
    wxPoint pos = sliderRect.GetPosition();
-   float velocity = t->GetGain();
+   float velocity = t->GetVelocity();
 
    mVelocity->Move(pos);
    mVelocity->Set(velocity);
