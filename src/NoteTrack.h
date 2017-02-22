@@ -69,14 +69,14 @@ class AUDACITY_DLL_API NoteTrack final : public Track {
    void WarpAndTransposeNotes(double t0, double t1,
                               const TimeWarper &warper, double semitones);
 
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
    void DrawLabelControls(wxDC & dc, const wxRect &rect);
    bool LabelClick(const wxRect &rect, int x, int y, bool right);
+#endif
 
    void SetSequence(std::unique_ptr<Alg_seq> &&seq);
    Alg_seq* GetSequence();
    void PrintSequence();
-
-   int GetVisibleChannels();
 
    Alg_seq *MakeExportableSeq(std::unique_ptr<Alg_seq> &cleanup) const;
    bool ExportMIDI(const wxString &f) const;
@@ -169,17 +169,19 @@ class AUDACITY_DLL_API NoteTrack final : public Track {
    XMLTagHandler *HandleXMLChild(const wxChar *tag) override;
    void WriteXML(XMLWriter &xmlFile) const override;
 
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
    // channels are numbered as integers 0-15, visible channels
    // (mVisibleChannels) is a bit set. Channels are displayed as
    // integers 1-16.
 #define CHANNEL_BIT(c) (1 << (c))
 #define ALL_CHANNELS 0xFFFF
-   bool IsVisibleChan(int c) {
+   bool IsVisibleChan(int c) const {
       return (mVisibleChannels & CHANNEL_BIT(c)) != 0;
    }
    void SetVisibleChan(int c) { mVisibleChannels |= CHANNEL_BIT(c); }
    void ClearVisibleChan(int c) { mVisibleChannels &= ~CHANNEL_BIT(c); }
    void ToggleVisibleChan(int c) { mVisibleChannels ^= CHANNEL_BIT(c); }
+#endif
  private:
    std::unique_ptr<Alg_seq> mSeq; // NULL means no sequence
    // when Duplicate() is called, assume that it is to put a copy
@@ -205,7 +207,9 @@ class AUDACITY_DLL_API NoteTrack final : public Track {
    int mBottomNote;
    int mStartBottomNote;
    int mPitchHeight;
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
    int mVisibleChannels; // bit set of visible channels
+#endif
    int mLastMidiPosition;
 };
 
