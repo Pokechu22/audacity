@@ -5087,7 +5087,7 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
       {
          // DM: Check Mute and Solo buttons on WaveTracks:
          if (MuteSoloFunc(t, rect, event.m_x, event.m_y, false) ||
-            MuteSoloFunc(t, rect, event.m_x, event.m_y, true))
+               MuteSoloFunc(t, rect, event.m_x, event.m_y, true))
             return;
 
          if (GainFunc(t, rect, event, event.m_x, event.m_y))
@@ -5101,17 +5101,18 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
       else if (t->GetKind() == Track::Note)
       {
 #ifdef EXPERIMENTAL_MIDI_OUT
-         if (MuteSoloFunc(t, rect, event.m_x, event.m_y, false) ||
-            MuteSoloFunc(t, rect, event.m_x, event.m_y, true))
+         if (isleft && MuteSoloFunc(t, rect, event.m_x, event.m_y, false) ||
+               MuteSoloFunc(t, rect, event.m_x, event.m_y, true))
             return;
 
-         if (VelocityFunc(t, rect, event, event.m_x, event.m_y))
+         if (isleft && VelocityFunc(t, rect, event, event.m_x, event.m_y))
             return;
 #endif
 #ifdef EXPERIMENTAL_MIDI_CONTROLS
-         if (rect.Contains(event.m_x, event.m_y) &&
-            ((NoteTrack *)t)->LabelClick(rect, event.m_x, event.m_y,
-            event.Button(wxMOUSE_BTN_RIGHT))) {
+         bool isright = event.Button(wxMOUSE_BTN_RIGHT);
+
+         if ((isleft || isright) && rect.Contains(event.m_x, event.m_y) &&
+               ((NoteTrack *)t)->LabelClick(rect, event.m_x, event.m_y, isright)) {
             Refresh(false);
             return;
          }
