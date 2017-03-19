@@ -461,9 +461,11 @@ UIHandle::Result TimeShiftHandle::Drag
 #else
       {
          trySnap = true;
-         const double rate = pTrack->GetRate();
-         // set it to a sample point
-         desiredSlideAmount = rint(desiredSlideAmount * rate) / rate;
+         if (pTrack->GetKind() == Track::Wave) {
+            const double rate = pTrack->GetRate();
+            // set it to a sample point
+            desiredSlideAmount = rint(desiredSlideAmount * rate) / rate;
+         }
          if (mSnapManager && mCapturedClip) {
             clipLeft = mCapturedClip->GetStartTime() + desiredSlideAmount;
             clipRight = mCapturedClip->GetEndTime() + desiredSlideAmount;
