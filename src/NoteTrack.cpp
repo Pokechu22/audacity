@@ -338,9 +338,10 @@ bool NoteTrack::LabelClick(const wxRect &rect, int mx, int my, bool right)
    if (rect.height < labelYOffset + cellHeight * 4 + 20)
       return false;
 
-   // XXX Why is the rectangle passed here is wider (128)
+   // XXX Why is the rectangle passed here smaller (96)
    // than the one passed to the draw method (100)?
-   int width = rect.width - 28;
+   // Wierdly, it was also _bigger_ (128) in the past...
+   int width = rect.width + 4;
 
    int x = rect.x + (width / 2 - cellWidth * 2) - 1;
    int y = rect.y + labelYOffset;
