@@ -358,10 +358,11 @@ float Sequence::GetRMS(sampleCount start, sampleCount len, bool mayThrow) const
    return sqrt(sumsq / length.as_double() );
 }
 
+// return non-NULL, or else throw.
 std::unique_ptr<Sequence> Sequence::Copy(sampleCount s0, sampleCount s1) const
 {
    if (s0 >= s1 || s0 >= mNumSamples || s1 < 0)
-      return {};
+      THROW_INCONSISTENCY_EXCEPTION;
 
    int numBlocks = mBlock.size();
 
@@ -440,8 +441,7 @@ void Sequence::Paste(sampleCount s, const Sequence *src)
          // PRL:  Why bother with Internat when the above is just wxT?
          Internat::ToString(s.as_double(), 0).c_str(),
          Internat::ToString(mNumSamples.as_double(), 0).c_str());
-      //THROW_INCONSISTENCY_EXCEPTION
-      ;
+      THROW_INCONSISTENCY_EXCEPTION;
    }
 
    // Quick check to make sure that it doesn't overflow
@@ -452,8 +452,7 @@ void Sequence::Paste(sampleCount s, const Sequence *src)
          // PRL:  Why bother with Internat when the above is just wxT?
          Internat::ToString(mNumSamples.as_double(), 0).c_str(),
          Internat::ToString(src->mNumSamples.as_double(), 0).c_str());
-      //THROW_INCONSISTENCY_EXCEPTION
-      ;
+      THROW_INCONSISTENCY_EXCEPTION;
    }
 
    if (src->mSampleFormat != mSampleFormat)
@@ -461,8 +460,7 @@ void Sequence::Paste(sampleCount s, const Sequence *src)
       wxLogError(
          wxT("Sequence::Paste: Sample format to be pasted, %s, does not match destination format, %s."),
          GetSampleFormatStr(src->mSampleFormat), GetSampleFormatStr(src->mSampleFormat));
-      //THROW_INCONSISTENCY_EXCEPTION
-      ;
+      THROW_INCONSISTENCY_EXCEPTION;
    }
 
    const BlockArray &srcBlock = src->mBlock;
@@ -640,8 +638,7 @@ void Sequence::InsertSilence(sampleCount s0, sampleCount len)
 {
    // Quick check to make sure that it doesn't overflow
    if (Overflows((mNumSamples.as_double()) + (len.as_double())))
-      //THROW_INCONSISTENCY_EXCEPTION
-      ;
+      THROW_INCONSISTENCY_EXCEPTION;
 
    if (len <= 0)
       return;
@@ -691,8 +688,7 @@ void Sequence::AppendAlias(const wxString &fullPath,
 {
    // Quick check to make sure that it doesn't overflow
    if (Overflows((mNumSamples.as_double()) + ((double)len)))
-      //THROW_INCONSISTENCY_EXCEPTION
-      ;
+      THROW_INCONSISTENCY_EXCEPTION;
 
    SeqBlock newBlock(
       useOD?
@@ -710,8 +706,7 @@ void Sequence::AppendCoded(const wxString &fName, sampleCount start,
 {
    // Quick check to make sure that it doesn't overflow
    if (Overflows((mNumSamples.as_double()) + ((double)len)))
-      //THROW_INCONSISTENCY_EXCEPTION
-      ;
+      THROW_INCONSISTENCY_EXCEPTION;
 
    SeqBlock newBlock(
       mDirManager->NewODDecodeBlockFile(fName, start, len, channel, decodeType),
@@ -1130,8 +1125,7 @@ bool Sequence::Get(samplePtr buffer, sampleFormat format,
    if (start < 0 || start > mNumSamples ||
        start + len > mNumSamples) {
       if (mayThrow)
-         //THROW_INCONSISTENCY_EXCEPTION
-         ;
+         THROW_INCONSISTENCY_EXCEPTION;
       ClearSamples( buffer, floatSample, 0, len );
       return false;
    }
@@ -1169,8 +1163,7 @@ void Sequence::SetSamples(samplePtr buffer, sampleFormat format,
 {
    if (start < 0 || start >= mNumSamples ||
        start + len > mNumSamples)
-      //THROW_INCONSISTENCY_EXCEPTION
-      ;
+      THROW_INCONSISTENCY_EXCEPTION;
 
    SampleBuffer scratch(mMaxSamples, mSampleFormat);
 
@@ -1206,9 +1199,7 @@ void Sequence::SetSamples(samplePtr buffer, sampleFormat format,
 
       if (!(fileLength <= mMaxSamples &&
             bstart + blen <= fileLength))
-         //THROW_INCONSISTENCY_EXCEPTION
-         wxASSERT(false)
-         ;
+         THROW_INCONSISTENCY_EXCEPTION;
 
       if ( bstart > 0 || blen < fileLength ) {
          Read(scratch.ptr(), mSampleFormat, block, 0, fileLength, true);
@@ -1520,8 +1511,7 @@ void Sequence::Append(samplePtr buffer, sampleFormat format,
 
    // Quick check to make sure that it doesn't overflow
    if (Overflows(mNumSamples.as_double() + ((double)len)))
-      //THROW_INCONSISTENCY_EXCEPTION
-      ;
+      THROW_INCONSISTENCY_EXCEPTION;
 
    BlockArray newBlock;
    sampleCount newNumSamples = mNumSamples;
@@ -1637,8 +1627,7 @@ void Sequence::Delete(sampleCount start, sampleCount len)
       return;
 
    if (len < 0 || start < 0 || start >= mNumSamples)
-      //THROW_INCONSISTENCY_EXCEPTION
-      ;
+      THROW_INCONSISTENCY_EXCEPTION;
 
    //TODO: add a ref-deref mechanism to SeqBlock/BlockArray so we don't have to make this a critical section.
    //On-demand threads iterate over the mBlocks and the GUI thread deletes them, so for now put a mutex here over
@@ -1851,8 +1840,7 @@ void Sequence::ConsistencyCheck
                  wxT("Undo the failed operation(s), then export or save your work and quit."));
 
       if (mayThrow)
-         //throw ex
-         ;
+         throw ex;
       else
          wxASSERT(false);
    }

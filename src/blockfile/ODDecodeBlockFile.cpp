@@ -112,8 +112,7 @@ auto ODDecodeBlockFile::GetMinMaxRMS(
    else
    {
       if (mayThrow)
-         // throw NotYetAvailableException{ mAudioFileName }
-         ;
+         throw NotYetAvailableException{ mAudioFileName };
 
       //fake values.  These values are used usually for normalization and amplifying, so we want
       //the max to be maximal and the min to be minimal
@@ -133,8 +132,7 @@ auto ODDecodeBlockFile::GetMinMaxRMS(bool mayThrow) const -> MinMaxRMS
    else
    {
       if (mayThrow)
-         // throw NotYetAvailableException{ mAudioFileName }
-         ;
+         throw NotYetAvailableException{ mAudioFileName };
 
       //fake values.  These values are used usually for normalization and amplifying, so we want
       //the max to be maximal and the min to be minimal
@@ -456,8 +454,7 @@ size_t ODDecodeBlockFile::ReadData(samplePtr data, sampleFormat format,
    else
    {
       if (mayThrow)
-         //throw NotYetAvailableException{ mFileName }
-         ;
+         throw NotYetAvailableException{ mAudioFileName };
 
       //we should do an ODRequest to start processing the data here, and wait till it finishes. and just do a SimpleBlockFile
       //ReadData.

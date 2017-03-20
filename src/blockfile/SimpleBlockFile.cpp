@@ -408,8 +408,7 @@ size_t SimpleBlockFile::ReadData(samplePtr data, sampleFormat format,
       if ( framesRead < len ) {
          if (mayThrow)
             // Not the best exception class?
-            //throw FileException{ FileException::Cause::Read, mFileName }
-            ;
+            throw FileException{ FileException::Cause::Read, mFileName };
          ClearSamples(data, format, framesRead, len - framesRead);
       }
 

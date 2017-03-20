@@ -1924,8 +1924,7 @@ std::pair<float, float> WaveTrack::GetMinMax(
 
    if (t0 > t1) {
       if (mayThrow)
-         //THROW_INCONSISTENCY_EXCEPTION
-         ;
+         THROW_INCONSISTENCY_EXCEPTION;
       return results;
    }
 
@@ -1957,8 +1956,7 @@ float WaveTrack::GetRMS(double t0, double t1, bool mayThrow) const
 {
    if (t0 > t1) {
       if (mayThrow)
-         //THROW_INCONSISTENCY_EXCEPTION
-         ;
+         THROW_INCONSISTENCY_EXCEPTION;
       return 0.f;
    }
 

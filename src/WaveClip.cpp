@@ -1295,8 +1295,7 @@ std::pair<float, float> WaveClip::GetMinMax(
 {
    if (t0 > t1) {
       if (mayThrow)
-         //THROW_INCONSISTENCY_EXCEPTION
-         ;
+         THROW_INCONSISTENCY_EXCEPTION;
       return {
          0.f,  // harmless, but unused since Sequence::GetMinMax does not use these values
          0.f   // harmless, but unused since Sequence::GetMinMax does not use these values
@@ -1318,8 +1317,7 @@ float WaveClip::GetRMS(double t0, double t1, bool mayThrow) const
 {
    if (t0 > t1) {
       if (mayThrow)
-         //THROW_INCONSISTENCY_EXCEPTION
-         ;
+         THROW_INCONSISTENCY_EXCEPTION;
       return 0.f;
    }
 
@@ -1881,8 +1879,7 @@ void WaveClip::Resample(int rate, ProgressDialog *progress)
          );
          error = (updateResult != ProgressResult::Success);
          if (error)
-            break;
-            //throw UserException{};
+            throw UserException{};
       }
    }
 
