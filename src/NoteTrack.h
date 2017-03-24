@@ -212,6 +212,10 @@ class AUDACITY_DLL_API NoteTrack final : public Track {
    int mPitchHeight;
    int mVisibleChannels; // bit set of visible channels
    int mLastMidiPosition;
+
+protected:
+   virtual TrackControls *GetControls();
+   virtual TrackVRulerControls *GetVRulerControls();
 };
 
 #endif // USE_MIDI
