@@ -1,0 +1,1 @@
+Previously, this was done incorrectly such that it worked for mute, but not for solo.  It has been edited to add missing parentheses to fix that.
