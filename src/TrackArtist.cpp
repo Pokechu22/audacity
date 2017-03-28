@@ -2818,7 +2818,6 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
       track->mSerializationBuffer.reset();
    }
    wxASSERT(seq);
-   int visibleChannels = track->mVisibleChannels;
 
    if (!track->GetSelected())
       sel0 = sel1 = 0.0;
@@ -2921,7 +2920,10 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
       if (evt->get_type() == 'n') { // 'n' means a note
          Alg_note_ptr note = (Alg_note_ptr) evt;
          // if the note's channel is visible
-         if (visibleChannels & (1 << (evt->chan & 15))) {
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
+         if (track->IsVisibleChan(evt->chan))
+#endif
+         {
             double xx = note->time + track->GetOffset();
             double x1 = xx + note->dur;
             if (xx < h1 && x1 > h) { // omit if outside box

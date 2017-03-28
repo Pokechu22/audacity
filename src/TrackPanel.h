@@ -100,7 +100,6 @@ private:
    // Draw the minimize button *and* the sync-lock track icon, if necessary.
    void DrawMinimize(wxDC * dc, const wxRect & rect, Track * t, bool down) const;
 
-   void GetTrackControlsRect(const wxRect & rect, wxRect &dest) const;
    void GetCloseBoxRect(const wxRect & rect, wxRect &dest) const;
    void GetTitleBarRect(const wxRect & rect, wxRect &dest) const;
 #ifdef EXPERIMENTAL_MIDI_OUT
@@ -115,6 +114,9 @@ private:
 #endif
    void GetMinimizeRect(const wxRect & rect, wxRect &dest) const;
    void GetSyncLockIconRect(const wxRect & rect, wxRect &dest) const;
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
+   void GetMidiControlsRect(const wxRect & rect, wxRect &dest) const;
+#endif
 
 public:
    LWSlider * GainSlider(WaveTrack *t, bool captured = false) const;
@@ -864,6 +866,13 @@ enum : int {
    kTrackInfoWidth = 100,
    kTrackInfoBtnSize = 16 // widely used dimension, usually height
 };
+
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
+enum : int {
+   kMidiCellWidth = (kTrackInfoWidth / 4) - 2,
+   kMidiCellHeight = kTrackInfoBtnSize
+};
+#endif
 
 #ifdef _MSC_VER
 #pragma warning( pop )
