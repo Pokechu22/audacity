@@ -110,7 +110,9 @@ private:
 #endif
    void GetGainRect(const wxRect & rect, wxRect &dest) const;
    void GetPanRect(const wxRect & rect, wxRect &dest) const;
+#ifdef EXPERIMENTAL_MIDI_OUT
    void GetVelocityRect(const wxRect & rect, wxRect &dest) const;
+#endif
    void GetMinimizeRect(const wxRect & rect, wxRect &dest) const;
    void GetSyncLockIconRect(const wxRect & rect, wxRect &dest) const;
 

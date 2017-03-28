@@ -9142,6 +9142,7 @@ void TrackInfo::GetPanRect(const wxRect & rect, wxRect & dest) const
    dest.height = 25;
 }
 
+#ifdef EXPERIMENTAL_MIDI_OUT
 void TrackInfo::GetVelocityRect(const wxRect & rect, wxRect & dest) const
 {
    dest.x = rect.x + 7;
@@ -9149,6 +9150,7 @@ void TrackInfo::GetVelocityRect(const wxRect & rect, wxRect & dest) const
    dest.width = 84;
    dest.height = 25;
 }
+#endif
 
 void TrackInfo::GetMinimizeRect(const wxRect & rect, wxRect &dest) const
 {
