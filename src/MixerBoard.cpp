@@ -240,7 +240,6 @@ MixerTrackCluster::MixerTrackCluster(wxWindow* parent,
       wxSizeEvent event(GetSize(), GetId());
       event.SetEventObject(this);
       GetEventHandler()->ProcessEvent(event);
-      UpdateGain();
    #endif
 }
 
@@ -487,6 +486,10 @@ MixerWaveTrackCluster::MixerWaveTrackCluster(wxWindow* parent,
    #if wxUSE_TOOLTIPS
    mMeter->SetToolTip(_("Signal Level Meter"));
    #endif // wxUSE_TOOLTIPS
+
+   #ifdef __WXMAC__
+      UpdateGain();  // Poke: Is this still needed?  Moved from MixerTrackCluster, but gain is already updated...
+   #endif
 }
 
 void MixerWaveTrackCluster::UpdatePrefs() {
