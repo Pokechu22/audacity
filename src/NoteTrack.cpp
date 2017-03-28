@@ -216,17 +216,16 @@ void NoteTrack::WarpAndTransposeNotes(double t0, double t1,
    iter.begin();
    Alg_event_ptr event;
    while (0 != (event = iter.next()) && event->time < t1) {
-      if (event->is_note() && event->time >= t0 &&
-          // Allegro data structure does not restrict channels to 16.
-          // Since there is not way to select more than 16 channels,
-          // map all channel numbers mod 16. This will have no effect
-          // on MIDI files, but it will allow users to at least select
-          // all channels on non-MIDI event sequence data.
+      if (event->is_note() && event->time >= t0
 #ifdef EXPERIMENTAL_MIDI_CONTROLS
-          IsVisibleChan(event->chan % 16)) {
-#else
-          true) {
+            // Allegro data structure does not restrict channels to 16.
+            // Since there is not way to select more than 16 channels,
+            // map all channel numbers mod 16. This will have no effect
+            // on MIDI files, but it will allow users to at least select
+            // all channels on non-MIDI event sequence data.
+            && IsVisibleChan(event->chan % 16)
 #endif
+            ) {
          event->set_pitch(event->get_pitch() + semitones);
       }
    }
