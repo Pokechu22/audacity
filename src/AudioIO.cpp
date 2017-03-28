@@ -3779,7 +3779,10 @@ void AudioIO::OutputEvent()
    // and if playback resumes, the pending note-off events WILL also
    // be sent (but if that is a problem, there would also be a problem
    // in the non-pause case.
-   if (((mNextEventTrack->GetVisibleChannels() & (1 << channel)) &&
+   if ((
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
+         (mNextEventTrack->IsVisibleChan(channel)) &&
+#endif
         // only play if note is not muted:
         !((mHasSolo || mNextEventTrack->GetMute()) &&
           !mNextEventTrack->GetSolo())) ||

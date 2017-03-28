@@ -193,7 +193,7 @@ bool XMLValueChecker::IsValidChannel(const int nValue)
    return (nValue >= Track::LeftChannel) && (nValue <= Track::MonoChannel);
 }
 
-#ifdef USE_MIDI
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
 bool XMLValueChecker::IsValidVisibleChannels(const int nValue)
 {
     return (nValue >= 0 && nValue < (1 << 16));
