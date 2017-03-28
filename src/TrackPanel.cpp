@@ -9088,10 +9088,9 @@ void TrackInfo::GetTitleBarRect(const wxRect & rect, wxRect & dest) const
 
 void TrackInfo::GetMuteSoloRect(const wxRect & rect, wxRect & dest, bool solo, bool bHasSoloButton
 #ifdef EXPERIMENTAL_MIDI_OUT
-   , int trackKind) const
-#else
-   ) const
+   , int trackKind
 #endif
+   ) const
 {
    dest.x = rect.x;
 #ifdef EXPERIMENTAL_MIDI_OUT
