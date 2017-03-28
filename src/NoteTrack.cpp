@@ -218,12 +218,7 @@ void NoteTrack::WarpAndTransposeNotes(double t0, double t1,
    while (0 != (event = iter.next()) && event->time < t1) {
       if (event->is_note() && event->time >= t0
 #ifdef EXPERIMENTAL_MIDI_CONTROLS
-            // Allegro data structure does not restrict channels to 16.
-            // Since there is not way to select more than 16 channels,
-            // map all channel numbers mod 16. This will have no effect
-            // on MIDI files, but it will allow users to at least select
-            // all channels on non-MIDI event sequence data.
-            && IsVisibleChan(event->chan % 16)
+            && IsVisibleChan(event->chan)
 #endif
             ) {
          event->set_pitch(event->get_pitch() + semitones);
@@ -245,17 +240,15 @@ void NoteTrack::WarpAndTransposeNotes(double t0, double t1,
 }
 
 #ifdef EXPERIMENTAL_MIDI_CONTROLS
-const int cellWidth = 23, cellHeight = 16, labelYOffset = 34;
-
-
+// Draws the midi channel toggle buttons within the given rect.
+// The rect should be evenly divisible by 4 on both axis.
 void NoteTrack::DrawLabelControls(wxDC & dc, const wxRect &rect)
 {
-   if (rect.height < labelYOffset + cellHeight * 4 + 20) {
-      return;
-   }
+   wxASSERT_MSG(rect.width % 4 == 0, "Midi channel control rect width must be divisible by 4");
+   wxASSERT_MSG(rect.height % 4 == 0, "Midi channel control rect height must be divisible by 4");
 
-   int x = rect.x + (rect.width / 2 - cellWidth * 2) - 1;
-   int y = rect.y + labelYOffset;
+   auto cellWidth = rect.width / 4;
+   auto cellHeight = rect.height / 4;
 
    wxRect box;
    for (int row = 0; row < 4; row++) {
@@ -264,8 +257,8 @@ void NoteTrack::DrawLabelControls(wxDC & dc, const wxRect &rect)
          // used by AColor and button labels
          int chanName = row * 4 + col + 1;
 
-         box.x = x + col * cellWidth;
-         box.y = y + row * cellHeight;
+         box.x = rect.x + col * cellWidth;
+         box.y = rect.y + row * cellHeight;
          box.width = cellWidth;
          box.height = cellHeight;
 
@@ -333,37 +326,26 @@ void NoteTrack::DrawLabelControls(wxDC & dc, const wxRect &rect)
    AColor::MIDIChannel(&dc, 0); // always return with gray color selected
 }
 
+// Handles clicking within the midi controls rect (same as DrawLabelControls).
+// This is somewhat oddly written, as these aren't real buttons - they act
+// when the mouse goes down; you can't hold it pressed and move off of it.
+// Left-clicking toggles a single channel; right-clicking turns off all other channels.
 bool NoteTrack::LabelClick(const wxRect &rect, int mx, int my, bool right)
 {
-   if (rect.height < labelYOffset + cellHeight * 4 + 20)
-      return false;
+   wxASSERT_MSG(rect.width % 4 == 0, "Midi channel control rect width must be divisible by 4");
+   wxASSERT_MSG(rect.height % 4 == 0, "Midi channel control rect height must be divisible by 4");
 
-   // XXX Why is the rectangle passed here smaller (96)
-   // than the one passed to the draw method (100)?
-   // Wierdly, it was also _bigger_ (128) in the past...
-   int width = rect.width + 4;
+   auto cellWidth = rect.width / 4;
+   auto cellHeight = rect.height / 4;
 
-   int x = rect.x + (width / 2 - cellWidth * 2) - 1;
-   int y = rect.y + labelYOffset;
-
-   // Can't compare row/col with 0 because division rounds negative numbers towards 0
-   if (mx - x < 0 || my - y < 0)
-      return false;
-
-   int col = (mx - x) / cellWidth;
-   int row = (my - y) / cellHeight;
-
-   if (row >= 4 || col >= 4)
-      return false;
+   int col = (mx - rect.x) / cellWidth;
+   int row = (my - rect.y) / cellHeight;
 
    int channel = row * 4 + col;
 
-   if (right) {
-      if (mVisibleChannels == CHANNEL_BIT(channel))
-         mVisibleChannels = ALL_CHANNELS;
-      else
-         mVisibleChannels = CHANNEL_BIT(channel);
-   } else
+   if (right)
+      SoloVisibleChan(channel);
+   else
       ToggleVisibleChan(channel);
 
    return true;

@@ -2921,7 +2921,7 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
          Alg_note_ptr note = (Alg_note_ptr) evt;
          // if the note's channel is visible
 #ifdef EXPERIMENTAL_MIDI_CONTROLS
-         if (track->IsVisibleChan(evt->chan & 15))
+         if (track->IsVisibleChan(evt->chan))
 #endif
          {
             double xx = note->time + track->GetOffset();

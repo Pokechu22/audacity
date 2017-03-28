@@ -5122,12 +5122,12 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
 #endif
 #ifdef EXPERIMENTAL_MIDI_CONTROLS
          wxRect midiRect;
-         mTrackInfo.GetTrackControlsRect(rect, midiRect);
+         mTrackInfo.GetMidiControlsRect(rect, midiRect);
 
          bool isright = event.Button(wxMOUSE_BTN_RIGHT);
 
          if ((isleft || isright) && midiRect.Contains(event.m_x, event.m_y) &&
-               ((NoteTrack *)t)->LabelClick(rect, event.m_x, event.m_y, isright)) {
+               ((NoteTrack *)t)->LabelClick(midiRect, event.m_x, event.m_y, isright)) {
             Refresh(false);
             return;
          }
@@ -7274,12 +7274,10 @@ void TrackPanel::DrawOutside(Track * t, wxDC * dc, const wxRect & rec,
    else if (bIsNote) {
 #ifdef EXPERIMENTAL_MIDI_CONTROLS
       wxRect midiRect;
-      mTrackInfo.GetTrackControlsRect(trackRect, midiRect);
-      // Offset by height of Solo/Mute buttons:
-      midiRect.y += 15;
-      midiRect.height -= 21; // allow room for minimize button at bottom
+      mTrackInfo.GetMidiControlsRect(rect, midiRect);
 
-      ((NoteTrack *)t)->DrawLabelControls(*dc, midiRect);
+      if (midiRect.y + midiRect.height < rect.y + rect.height - 19)
+         ((NoteTrack *)t)->DrawLabelControls(*dc, midiRect);
 #endif
 #ifdef EXPERIMENTAL_MIDI_OUT
       // Draw some lines for MuteSolo buttons (normally handled by DrawBordersWithin but not done for note tracks)
@@ -9170,6 +9168,15 @@ void TrackInfo::GetSyncLockIconRect(const wxRect & rect, wxRect &dest) const
    dest.height = kTrackInfoBtnSize;
 }
 
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
+void TrackInfo::GetMidiControlsRect(const wxRect & rect, wxRect & dest) const
+{
+   dest.x = rect.x + 2; // To center slightly
+   dest.width = kMidiCellWidth * 4;
+   dest.y = rect.y + 34;
+   dest.height = kMidiCellHeight * 4;
+}
+#endif
 
 /// \todo Probably should move to 'Utils.cpp'.
 void TrackInfo::SetTrackInfoFont(wxDC * dc) const
@@ -9242,21 +9249,6 @@ void TrackInfo::DrawBackground(wxDC * dc, const wxRect & rect, bool bSelected,
    }
 #endif
 }
-
-void TrackInfo::GetTrackControlsRect(const wxRect & rect, wxRect & dest) const
-{
-   wxRect top;
-   wxRect bot;
-
-   GetTitleBarRect(rect, top);
-   GetMinimizeRect(rect, bot);
-
-   dest.x = rect.x;
-   dest.width = kTrackInfoWidth - dest.x;
-   dest.y = top.GetBottom() + 2; // BUG
-   dest.height = bot.GetTop() - top.GetBottom() - 2;
-}
-
 
 void TrackInfo::DrawCloseBox(wxDC * dc, const wxRect & rect, bool down) const
 {
