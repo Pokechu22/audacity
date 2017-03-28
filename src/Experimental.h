@@ -122,6 +122,12 @@
 //#define EXPERIMENTAL_SCOREALIGN
 #endif
 
+// Draws a label to toggle individual channels within a NoteTrack.
+// USE_MIDI must be defined in order for EXPERIMENTAL_MIDI_CONTROLS to work
+#ifdef USE_MIDI
+#define EXPERIMENTAL_MIDI_CONTROLS
+#endif
+
 //If you want any of these files, ask JKC.  They are not
 //yet checked in to Audacity SVN as of 12-Feb-2010
 #ifdef EXPERIMENTAL_NOTEBOOK

@@ -119,7 +119,9 @@ NoteTrack::NoteTrack(const std::shared_ptr<DirManager> &projDirManager)
    mBottomNote = 24;
    mPitchHeight = 5;
 
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
    mVisibleChannels = ALL_CHANNELS;
+#endif
    mLastMidiPosition = 0;
 }
 
@@ -158,7 +160,9 @@ Track::Holder NoteTrack::Duplicate() const
    duplicate->SetBottomNote(mBottomNote);
    duplicate->SetPitchHeight(mPitchHeight);
    duplicate->mLastMidiPosition = mLastMidiPosition;
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
    duplicate->mVisibleChannels = mVisibleChannels;
+#endif
    duplicate->SetOffset(GetOffset());
 #ifdef EXPERIMENTAL_MIDI_OUT
    duplicate->SetVelocity(GetVelocity());
@@ -213,13 +217,11 @@ void NoteTrack::WarpAndTransposeNotes(double t0, double t1,
    iter.begin();
    Alg_event_ptr event;
    while (0 != (event = iter.next()) && event->time < t1) {
-      if (event->is_note() && event->time >= t0 &&
-          // Allegro data structure does not restrict channels to 16.
-          // Since there is not way to select more than 16 channels,
-          // map all channel numbers mod 16. This will have no effect
-          // on MIDI files, but it will allow users to at least select
-          // all channels on non-MIDI event sequence data.
-          IsVisibleChan(event->chan % 16)) {
+      if (event->is_note() && event->time >= t0
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
+            && IsVisibleChan(event->chan)
+#endif
+            ) {
          event->set_pitch(event->get_pitch() + semitones);
       }
    }
@@ -238,19 +240,16 @@ void NoteTrack::WarpAndTransposeNotes(double t0, double t1,
    mSeq->convert_to_seconds();
 }
 
-
-
-int NoteTrack::DrawLabelControls(wxDC & dc, const wxRect &r)
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
+// Draws the midi channel toggle buttons within the given rect.
+// The rect should be evenly divisible by 4 on both axis.
+void NoteTrack::DrawLabelControls(wxDC & dc, const wxRect &rect)
 {
-   int wid = 23;
-   int ht = 16;
+   wxASSERT_MSG(rect.width % 4 == 0, "Midi channel control rect width must be divisible by 4");
+   wxASSERT_MSG(rect.height % 4 == 0, "Midi channel control rect height must be divisible by 4");
 
-   if (r.height < ht * 4) {
-      return r.y + 5 + ht * 4;
-   }
-
-   int x = r.x + (r.width / 2 - wid * 2) + 2;
-   int y = r.y + 5;
+   auto cellWidth = rect.width / 4;
+   auto cellHeight = rect.height / 4;
 
    wxRect box;
    for (int row = 0; row < 4; row++) {
@@ -259,10 +258,10 @@ int NoteTrack::DrawLabelControls(wxDC & dc, const wxRect &r)
          // used by AColor and button labels
          int chanName = row * 4 + col + 1;
 
-         box.x = x + col * wid;
-         box.y = y + row * ht;
-         box.width = wid;
-         box.height = ht;
+         box.x = rect.x + col * cellWidth;
+         box.y = rect.y + row * cellHeight;
+         box.width = cellWidth;
+         box.height = cellHeight;
 
          if (IsVisibleChan(chanName - 1)) {
             AColor::MIDIChannel(&dc, chanName);
@@ -315,51 +314,44 @@ int NoteTrack::DrawLabelControls(wxDC & dc, const wxRect &r)
 
          }
 
-         wxString t;
+         wxString text;
          wxCoord w;
          wxCoord h;
 
-         t.Printf(wxT("%d"), chanName);
-         dc.GetTextExtent(t, &w, &h);
+         text.Printf(wxT("%d"), chanName);
+         dc.GetTextExtent(text, &w, &h);
 
-         dc.DrawText(t, box.x + (box.width - w) / 2, box.y + (box.height - h) / 2);
+         dc.DrawText(text, box.x + (box.width - w) / 2, box.y + (box.height - h) / 2);
       }
    }
    AColor::MIDIChannel(&dc, 0); // always return with gray color selected
-   return box.GetBottom();
 }
 
-bool NoteTrack::LabelClick(const wxRect &r, int mx, int my, bool right)
+// Handles clicking within the midi controls rect (same as DrawLabelControls).
+// This is somewhat oddly written, as these aren't real buttons - they act
+// when the mouse goes down; you can't hold it pressed and move off of it.
+// Left-clicking toggles a single channel; right-clicking turns off all other channels.
+bool NoteTrack::LabelClick(const wxRect &rect, int mx, int my, bool right)
 {
-   int wid = 23;
-   int ht = 16;
+   wxASSERT_MSG(rect.width % 4 == 0, "Midi channel control rect width must be divisible by 4");
+   wxASSERT_MSG(rect.height % 4 == 0, "Midi channel control rect height must be divisible by 4");
 
-   if (r.height < ht * 4)
-      return false;
+   auto cellWidth = rect.width / 4;
+   auto cellHeight = rect.height / 4;
 
-   int x = r.x + (r.width / 2 - wid * 2);
-   int y = r.y + 1;
-   // after adding Mute and Solo buttons, mapping is broken, so hack in the offset
-   y += 12;
-
-   int col = (mx - x) / wid;
-   int row = (my - y) / ht;
-
-   if (row < 0 || row >= 4 || col < 0 || col >= 4)
-      return false;
+   int col = (mx - rect.x) / cellWidth;
+   int row = (my - rect.y) / cellHeight;
 
    int channel = row * 4 + col;
 
-   if (right) {
-      if (mVisibleChannels == CHANNEL_BIT(channel))
-         mVisibleChannels = ALL_CHANNELS;
-      else
-         mVisibleChannels = CHANNEL_BIT(channel);
-   } else
+   if (right)
+      SoloVisibleChan(channel);
+   else
       ToggleVisibleChan(channel);
 
    return true;
 }
+#endif
 
 void NoteTrack::SetSequence(std::unique_ptr<Alg_seq> &&seq)
 {
@@ -426,11 +418,6 @@ void NoteTrack::PrintSequence()
    }
 
    fclose(debugOutput);
-}
-
-int NoteTrack::GetVisibleChannels()
-{
-   return mVisibleChannels;
 }
 
 Track::Holder NoteTrack::Cut(double t0, double t1)
@@ -775,6 +762,7 @@ bool NoteTrack::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
                   XMLValueChecker::IsGoodString(strValue) &&
                   Internat::CompatibleToDouble(strValue, &dblValue))
             SetOffset(dblValue);
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
          else if (!wxStrcmp(attr, wxT("visiblechannels"))) {
              if (!XMLValueChecker::IsGoodInt(strValue) ||
                  !strValue.ToLong(&nValue) ||
@@ -782,6 +770,7 @@ bool NoteTrack::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
                  return false;
              mVisibleChannels = nValue;
          }
+#endif
          else if (!wxStrcmp(attr, wxT("height")) &&
                   XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
             mHeight = nValue;
@@ -846,7 +835,9 @@ void NoteTrack::WriteXML(XMLWriter &xmlFile) const
    xmlFile.WriteAttr(wxT("name"), saveme->mName);
    this->NoteTrackBase::WriteXMLAttributes(xmlFile);
    xmlFile.WriteAttr(wxT("offset"), saveme->GetOffset());
+#ifdef EXPERIMENTAL_MIDI_CONTROLS
    xmlFile.WriteAttr(wxT("visiblechannels"), saveme->mVisibleChannels);
+#endif
    xmlFile.WriteAttr(wxT("height"), saveme->GetActualHeight());
    xmlFile.WriteAttr(wxT("minimized"), saveme->GetMinimized());
    xmlFile.WriteAttr(wxT("isSelected"), this->GetSelected());
