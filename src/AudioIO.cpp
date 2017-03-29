@@ -1826,6 +1826,9 @@ int AudioIO::StartStream(const ConstWaveTrackArray &playbackTracks,
 
    if(!mMidiPlaybackTracks.empty()){
       successMidi = StartPortMidiStream();
+      if (!successMidi) {
+         wxMessageBox(Pm_GetErrorText(mLastPmError));
+      }
    }
 
    // On the other hand, if MIDI cannot be opened, we will not complain
@@ -1838,6 +1841,8 @@ int AudioIO::StartStream(const ConstWaveTrackArray &playbackTracks,
 
       // Don't cause a busy wait in the audio thread after stopping scrubbing
       mPlayMode = PLAY_STRAIGHT;
+
+      wxMessageBox(Pa_GetErrorText(mLastPaError));
 
       return 0;
    }
