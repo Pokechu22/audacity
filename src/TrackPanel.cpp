@@ -5039,7 +5039,7 @@ void TrackPanel::HandleSliders(wxMouseEvent &event, bool pan)
 void TrackPanel::HandleVelocitySlider(wxMouseEvent &event)
 {
    wxASSERT(mCapturedTrack->GetKind() == Track::Note);
-   NoteTrack *capturedTrack = (NoteTrack *) mCapturedTrack;
+   NoteTrack *capturedTrack = static_cast<NoteTrack *>(mCapturedTrack);
 
    LWSlider *slider = mTrackInfo.VelocitySlider(capturedTrack, true);
 
@@ -5193,7 +5193,7 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
          bool isright = event.Button(wxMOUSE_BTN_RIGHT);
 
          if ((isleft || isright) && midiRect.Contains(event.m_x, event.m_y) &&
-               ((NoteTrack *)t)->LabelClick(midiRect, event.m_x, event.m_y, isright)) {
+               static_cast<NoteTrack *>(t)->LabelClick(midiRect, event.m_x, event.m_y, isright)) {
             Refresh(false);
             return;
          }
@@ -7321,7 +7321,7 @@ void TrackPanel::DrawOutside(Track * t, wxDC * dc, const wxRect & rec,
       mTrackInfo.GetMidiControlsRect(rect, midiRect);
 
       if (midiRect.y + midiRect.height < rect.y + rect.height - 19)
-         ((NoteTrack *)t)->DrawLabelControls(*dc, midiRect);
+         static_cast<NoteTrack *>(t)->DrawLabelControls(*dc, midiRect);
 #endif
 #ifdef EXPERIMENTAL_MIDI_OUT
       // Draw some lines for MuteSolo buttons (normally handled by DrawBordersWithin but not done for note tracks)
@@ -7337,7 +7337,7 @@ void TrackPanel::DrawOutside(Track * t, wxDC * dc, const wxRect & rec,
 
       // Place a volume control below channel buttons (this will
       // control an offset to midi velocity).
-      mTrackInfo.DrawVelocitySlider(dc, (NoteTrack *)t, rect, captured);
+      mTrackInfo.DrawVelocitySlider(dc, static_cast<NoteTrack *>(t), rect, captured);
 #endif
    }
 #endif // USE_MIDI
