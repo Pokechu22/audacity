@@ -79,10 +79,8 @@ class AUDACITY_DLL_API NoteTrack final
    void WarpAndTransposeNotes(double t0, double t1,
                               const TimeWarper &warper, double semitones);
 
-#ifdef EXPERIMENTAL_MIDI_CONTROLS
    void DrawLabelControls(wxDC & dc, const wxRect &rect);
    bool LabelClick(const wxRect &rect, int x, int y, bool right);
-#endif
 
    void SetSequence(std::unique_ptr<Alg_seq> &&seq);
    Alg_seq* GetSequence();
@@ -181,7 +179,6 @@ class AUDACITY_DLL_API NoteTrack final
    XMLTagHandler *HandleXMLChild(const wxChar *tag) override;
    void WriteXML(XMLWriter &xmlFile) const override;
 
-#ifdef EXPERIMENTAL_MIDI_CONTROLS
    // channels are numbered as integers 0-15, visible channels
    // (mVisibleChannels) is a bit set. Channels are displayed as
    // integers 1-16.
@@ -207,7 +204,6 @@ class AUDACITY_DLL_API NoteTrack final
       else
          mVisibleChannels = CHANNEL_BIT(c);
    }
-#endif
  private:
    std::unique_ptr<Alg_seq> mSeq; // NULL means no sequence
    // when Duplicate() is called, assume that it is to put a copy
@@ -233,9 +229,7 @@ class AUDACITY_DLL_API NoteTrack final
    int mBottomNote;
    int mStartBottomNote;
    int mPitchHeight;
-#ifdef EXPERIMENTAL_MIDI_CONTROLS
    int mVisibleChannels; // bit set of visible channels
-#endif
    int mLastMidiPosition;
 };
 

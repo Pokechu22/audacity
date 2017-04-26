@@ -125,7 +125,7 @@ private:
 #endif
    void GetMinimizeRect(const wxRect & rect, wxRect &dest) const;
    void GetSyncLockIconRect(const wxRect & rect, wxRect &dest) const;
-#ifdef EXPERIMENTAL_MIDI_CONTROLS
+#ifdef USE_MIDI
    void GetMidiControlsRect(const wxRect & rect, wxRect &dest) const;
 #endif
 
@@ -883,7 +883,7 @@ enum : int {
    kTrackInfoBtnSize = 18 // widely used dimension, usually height
 };
 
-#ifdef EXPERIMENTAL_MIDI_CONTROLS
+#ifdef USE_MIDI
 enum : int {
    kMidiCellWidth = (kTrackInfoWidth / 4) - 2,
    kMidiCellHeight = kTrackInfoBtnSize

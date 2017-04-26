@@ -5186,7 +5186,6 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
          if (isleft && VelocityFunc(t, rect, event, event.m_x, event.m_y))
             return;
 #endif
-#ifdef EXPERIMENTAL_MIDI_CONTROLS
          wxRect midiRect;
          mTrackInfo.GetMidiControlsRect(rect, midiRect);
 
@@ -5198,7 +5197,6 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
             Refresh(false);
             return;
          }
-#endif
       }
 #endif // USE_MIDI
 
@@ -7317,13 +7315,11 @@ void TrackPanel::DrawOutside(Track * t, wxDC * dc, const wxRect & rec,
 
 #ifdef USE_MIDI
    else if (bIsNote) {
-#ifdef EXPERIMENTAL_MIDI_CONTROLS
       wxRect midiRect;
       mTrackInfo.GetMidiControlsRect(rect, midiRect);
 
       if (midiRect.y + midiRect.height < rect.y + rect.height - 19)
          static_cast<NoteTrack *>(t)->DrawLabelControls(*dc, midiRect);
-#endif
 #ifdef EXPERIMENTAL_MIDI_OUT
       // Draw some lines for MuteSolo buttons (normally handled by DrawBordersWithin but not done for note tracks)
       if (rect.height > 48) {
@@ -9287,7 +9283,7 @@ void TrackInfo::GetSyncLockIconRect(const wxRect & rect, wxRect &dest) const
    dest.height = kTrackInfoBtnSize;
 }
 
-#ifdef EXPERIMENTAL_MIDI_CONTROLS
+#ifdef USE_MIDI
 void TrackInfo::GetMidiControlsRect(const wxRect & rect, wxRect & dest) const
 {
    dest.x = rect.x + 2; // To center slightly
