@@ -516,10 +516,10 @@ private:
    volatile long    mPauseTime;         // pause in ms if no audio playback
    volatile double  mMidiLoopOffset;    // total of backward jumps
    volatile long    mAudioFramesPerBuffer;
-   volatile bool    mMidiPaused;        // used by Midi process to record
-       // that pause has begun. Pause time is accumulated in mPauseTime.
-       // This variable is shared so that it can be cleared when playback
-       // begins.
+   /// Used by Midi process to record that pause has begun.
+   /// Pause time is accumulated in mPauseTime.  This variable is shared
+   /// so that it can be cleared when playback begins.
+   volatile bool    mMidiPaused;
 
    Alg_seq_ptr      mSeq;
    std::unique_ptr<Alg_iterator> mIterator;
@@ -569,20 +569,30 @@ private:
    volatile int        mStreamToken;
    static int          mNextStreamToken;
    double              mFactor;
+   /// Audio playback rate in samples per second
    double              mRate;
-   double              mT0; // playback starts at offset of mT0
-   double              mT1; // and ends at offset of mT1
-   double              mTime; // current time position during playback
-   double              mWarpedTime; // current time after warping, starting at zero (unlike mTime)
-   double              mWarpedLength; // total length after warping
+   /// Playback starts at offset of mT0, which is measured in seconds.
+   double              mT0;
+   /// Playback ends at offset of mT1, which is measured in seconds.  Note that mT1 may be less than mT0 during scrubbing.
+   double              mT1;
+   /// Current time position during playback, in seconds.  Between mT0 and mT1.
+   double              mTime;
+   /// Current time after warping, starting at zero (unlike mTime).
+   /// Length in real seconds between mT0 and mTime.
+   double              mWarpedTime;
+   /// Total length after warping via a time track.
+   /// Length in real seconds between mT0 and mT1.  Always positive.
+   double              mWarpedLength;
    double              mSeek;
    double              mPlaybackRingBufferSecs;
    double              mCaptureRingBufferSecs;
    size_t              mPlaybackSamplesToCopy;
    double              mMinCaptureSecsToCopy;
+   /// True if audio playback is paused
    bool                mPaused;
    PaStream           *mPortStreamV19;
    bool                mSoftwarePlaythrough;
+   /// True if Sound Activated Recording is enabled
    bool                mPauseRec;
    float               mSilenceLevel;
    unsigned int        mNumCaptureChannels;
