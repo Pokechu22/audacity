@@ -439,11 +439,8 @@ private:
    void OutputEvent();
    void FillMidiBuffers();
    void GetNextEvent();
-   void AudacityMidiCallback();
    double AudioTime() { return mT0 + mNumFrames / mRate; }
    double PauseTime();
-   // double getCurrentTrackTime();
-   // long CalculateMidiTimeStamp(double time);
    void AllNotesOff();
 #endif
 
@@ -539,7 +536,6 @@ private:
    NoteTrack        *mNextEventTrack; // track of next event
    bool             mMidiOutputComplete; // true when output reaches mT1
    bool             mNextIsNoteOn; // is the next event a note-off?
-   //   int                 mCnt;
    // mMidiStreamActive tells when mMidiStream is open for output
    bool             mMidiStreamActive;
    // when true, mSendMidiState means send only updates, not note-on's,
