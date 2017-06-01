@@ -29,7 +29,7 @@
 
 #ifndef __EXPERIMENTAL__
 #define __EXPERIMENTAL__
-
+#define USE_MIDI 1
 // ACH 08 Jan 2014
 // EQ accelerated code
 //#define EXPERIMENTAL_EQ_SSE_THREADED
@@ -121,9 +121,9 @@
 // Enables MIDI Output of NoteTrack (MIDI) data during playback
 // USE_MIDI must be defined in order for EXPERIMENTAL_MIDI_OUT to work
 #ifdef USE_MIDI
-#ifdef __WXMSW__
+//#ifdef __WXMSW__
    #define EXPERIMENTAL_MIDI_OUT
-#endif
+//#endif
 #endif
 
 // USE_MIDI must be defined in order for EXPERIMENTAL_SCOREALIGN to work
