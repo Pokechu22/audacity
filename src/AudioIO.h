@@ -226,6 +226,8 @@ class AUDACITY_DLL_API AudioIO final {
  public:
    bool SetHasSolo(bool hasSolo);
    bool GetHasSolo() { return mHasSolo; }
+   /// Sets the speed for midi playback, based off of the transcription speed.
+   /// This takes a percentage, so passing 100 will play at normal speed.
    void SetMidiPlaySpeed(double s) { mMidiPlaySpeed = s * 0.01; }
 #endif
 
@@ -506,8 +508,11 @@ private:
    PmStream        *mMidiStream;
    PmError          mLastPmError;
    long             mMidiLatency; // latency value for PortMidi
-   long             mSynthLatency; // latency of MIDI synthesizer
-   double           mMidiPlaySpeed; // a copy of TranscriptionToolBar::mPlaySpeed
+   /// Latency of MIDI synthesizer
+   long             mSynthLatency;
+   /// A copy of TranscriptionToolBar::mPlaySpeed - a linear speed offset.
+   /// Should be replaced with use of mTimeTrack
+   double           mMidiPlaySpeed;
 
    // These fields are used to synchronize MIDI with audio
    volatile double  mAudioCallbackOutputTime; // PortAudio's outTime
