@@ -492,12 +492,25 @@ private:
    /** \brief How many sample rates to try */
    static const int NumRatesToTry;
 
+   /** \brief True if the end time is before the start time */
    bool ReversedTime() const
    {
       return mT1 < mT0;
    }
+   /** \brief Clamps the given time to be between mT0 and mT1
+    *
+    * Returns the bound if the value is out of bounds; does not wrap.
+    * Returns a time in seconds.
+    * @param absoluteTime A time in seconds, usually mTime
+    */
    double LimitStreamTime(double absoluteTime) const;
 
+   /** \brief Normalizes the given time, clamping it and handling gaps from cut preview. 
+    *
+    * Clamps the time (unless scrubbing), and skips over the cut section.
+    * Returns a time in seconds.
+    * @param absoluteTime A time in seconds, usually mTime
+    */
    double NormalizeStreamTime(double absoluteTime) const;
 
    /** \brief Clean up after StartStream if it fails.
@@ -509,19 +522,26 @@ private:
    //   MIDI_PLAYBACK:
    PmStream        *mMidiStream;
    PmError          mLastPmError;
-   long             mMidiLatency; // latency value for PortMidi
+   /// Latency value for PortMidi
+   long             mMidiLatency;
    /// Latency of MIDI synthesizer
    long             mSynthLatency;
    /// A copy of TranscriptionToolBar::mPlaySpeed - a linear speed offset.
    /// Should be replaced with use of mTimeTrack
    double           mMidiPlaySpeed;
 
-   // These fields are used to synchronize MIDI with audio
-   volatile double  mAudioCallbackOutputTime; // PortAudio's outTime
-   volatile long    mNumFrames;         // includes pauses
-   volatile long    mNumPauseFrames;    // how many frames of zeros inserted?
-   volatile long    mPauseTime;         // pause in ms if no audio playback
-   volatile double  mMidiLoopOffset;    // total of backward jumps
+   // These fields are used to synchronize MIDI with audio:
+
+   /// PortAudio's outTime
+   volatile double  mAudioCallbackOutputTime;
+   /// Number of frames output, including pauses
+   volatile long    mNumFrames;
+   /// How many frames of zeros were output due to pauses?
+   volatile long    mNumPauseFrames;
+   /// pause in ms if no audio playback
+   volatile long    mPauseTime;
+   /// total of backward jumps
+   volatile double  mMidiLoopOffset;
    volatile long    mAudioFramesPerBuffer;
    /// Used by Midi process to record that pause has begun.
    /// Pause time is accumulated in mPauseTime.  This variable is shared
@@ -530,16 +550,21 @@ private:
 
    Alg_seq_ptr      mSeq;
    std::unique_ptr<Alg_iterator> mIterator;
-   Alg_event_ptr    mNextEvent; // the next event to play (or null)
-   double           mNextEventTime; // the time of the next event
-                       // (note that this could be a note's time+duration)
-   NoteTrack        *mNextEventTrack; // track of next event
-   bool             mMidiOutputComplete; // true when output reaches mT1
-   bool             mNextIsNoteOn; // is the next event a note-off?
-   // mMidiStreamActive tells when mMidiStream is open for output
+   /// The next event to play (or null)
+   Alg_event_ptr    mNextEvent;
+   /// Time at which the next event should be output, measured in seconds.
+   /// Note that this could be a note's time+duration for note offs.
+   double           mNextEventTime;
+   /// Track of next event
+   NoteTrack        *mNextEventTrack;
+   /// True when output reaches mT1
+   bool             mMidiOutputComplete;
+   /// Is the next event a note-off?
+   bool             mNextIsNoteOn;
+   /// mMidiStreamActive tells when mMidiStream is open for output
    bool             mMidiStreamActive;
-   // when true, mSendMidiState means send only updates, not note-on's,
-   // used to send state changes that precede the selected notes
+   /// when true, mSendMidiState means send only updates, not note-on's,
+   /// used to send state changes that precede the selected notes
    bool             mSendMidiState;
    NoteTrackArray   mMidiPlaybackTracks;
 #endif
