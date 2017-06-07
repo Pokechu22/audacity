@@ -53,7 +53,7 @@ enum CommandFlag : unsigned long long
    NotMinimizedFlag      = 0x100000000ULL, // prl
    PausedFlag            = 0x200000000ULL, // jkc
    NotPausedFlag         = 0x400000000ULL, // jkc
-   HasWaveDataFlag       = 0x800000000ULL, // jkc
+   HasAudioDataFlag      = 0x800000000ULL, // jkc
    PlayableTracksExistFlag = 0x1000000000ULL,
    AudioTracksSelectedFlag = 0x2000000000ULL,
 
