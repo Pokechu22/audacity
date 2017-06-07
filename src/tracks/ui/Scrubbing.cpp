@@ -235,12 +235,12 @@ namespace {
          "Seeking" is normal speed playback but with skips, ...
        */
       { wxT("Scrub"),       XO("&Scrub"),           XO("Scrubbing"),
-         CaptureNotBusyFlag | HasWaveDataFlag,
+         CaptureNotBusyFlag | HasAudioDataFlag,
          &Scrubber::OnScrub,       false,      &Scrubber::Scrubs,
       },
 
       { wxT("Seek"),        XO("See&k"),            XO("Seeking"),
-         CaptureNotBusyFlag | HasWaveDataFlag,
+         CaptureNotBusyFlag | HasAudioDataFlag,
          &Scrubber::OnSeek,        true,       &Scrubber::Seeks,
       },
 
