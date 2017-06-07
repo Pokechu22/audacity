@@ -2008,7 +2008,7 @@ CommandFlag AudacityProject::GetUpdateFlags(bool checkActive)
             }
          }
          if( t->GetEndTime() > t->GetStartTime() )
-            flags |= HasWaveDataFlag; 
+            flags |= HasAudioDataFlag;
       }
 #if defined(USE_MIDI)
       else if (t->GetKind() == Track::Note) {
@@ -2017,6 +2017,9 @@ CommandFlag AudacityProject::GetUpdateFlags(bool checkActive)
          flags |= NoteTracksExistFlag;
 #ifdef EXPERIMENTAL_MIDI_OUT
          flags |= PlayableTracksExistFlag;
+
+         if( t->GetEndTime() > t->GetStartTime() )
+            flags |= HasAudioDataFlag;
 #endif
 
          if (nt->GetSelected()) {
