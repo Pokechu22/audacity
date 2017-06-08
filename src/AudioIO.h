@@ -559,7 +559,7 @@ private:
    NoteTrack        *mNextEventTrack;
    /// True when output reaches mT1
    bool             mMidiOutputComplete;
-   /// Is the next event a note-off?
+   /// Is the next event a note-on?
    bool             mNextIsNoteOn;
    /// mMidiStreamActive tells when mMidiStream is open for output
    bool             mMidiStreamActive;
