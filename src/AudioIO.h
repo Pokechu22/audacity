@@ -435,7 +435,7 @@ private:
    void OutputEvent();
    void FillMidiBuffers();
    void GetNextEvent();
-   double AudioTime() { return mT0 + mNumFrames / mRate; }
+   double AudioTime();
    double PauseTime();
    void AllNotesOff();
 #endif
@@ -518,7 +518,8 @@ private:
    //   MIDI_PLAYBACK:
    PmStream        *mMidiStream;
    PmError          mLastPmError;
-   /// Latency value for PortMidi
+   /// Latency value for PortMidi.
+   /// If set to 0, timestamp-based output is disabled; this is done for scrubbing.
    long             mMidiLatency;
    /// Latency of MIDI synthesizer
    long             mSynthLatency;
