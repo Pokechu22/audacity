@@ -2184,7 +2184,7 @@ bool AudioIO::StartPortMidiStream()
                                 0,
                                 &::MidiTime,
                                 NULL,
-                                mMidiLatency);
+                                0/*mMidiLatency*/);
    if (mLastPmError == pmNoError) {
       mMidiStreamActive = true;
       mPauseTime = 0;
@@ -3983,7 +3983,7 @@ void AudioIO::GetNextEvent()
    }
    mNextEvent = mIterator->next(&mNextIsNoteOn,
                                 (void **) &mNextEventTrack,
-                                &nextOffset, mT1 + mMidiLoopOffset);
+                                &nextOffset, 0/*mT1 + mMidiLoopOffset*/);
    if (mNextEvent) {
       mNextEventTime = (mNextIsNoteOn ? mNextEvent->time :
                               mNextEvent->get_end_time()) + nextOffset;;
