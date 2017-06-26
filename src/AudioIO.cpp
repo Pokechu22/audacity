@@ -2153,6 +2153,11 @@ bool AudioIO::StartPortMidiStream()
       return false;
 
    mMidiLatency = 1; // arbitrary, but small
+#ifdef EXPERIMENTAL_SCRUBBING_SUPPORT
+   if (mPlayMode == gAudioIO->PLAY_SCRUB) {
+      mMidiLatency = 0; // Turn off timestamp-based output when scrubbing
+   }
+#endif
    //printf("StartPortMidiStream: mT0 %g mTime %g\n",
    //       gAudioIO->mT0, gAudioIO->mTime);
 
@@ -3989,9 +3994,15 @@ void AudioIO::GetNextEvent()
         mNextEvent = NULL;
         return;
    }
+   double endTime = mT1 + mMidiLoopOffset;
+#ifdef EXPERIMENTAL_SCRUBBING_SUPPORT
+   if (mPlayMode == gAudioIO->PLAY_SCRUB) {
+      endTime = 0; // no end
+   }
+#endif
    mNextEvent = mIterator->next(&mNextIsNoteOn,
                                 (void **) &mNextEventTrack,
-                                &nextOffset, 0/*mT1 + mMidiLoopOffset*/);
+                                &nextOffset, endTime);
    if (mNextEvent) {
       mNextEventTime = (mNextIsNoteOn ? mNextEvent->time :
                               mNextEvent->get_end_time()) + nextOffset;;
@@ -4070,6 +4081,16 @@ void AudioIO::FillMidiBuffers()
       OutputEvent();
       GetNextEvent();
    }
+}
+
+double AudioIO::AudioTime()
+{
+#ifdef EXPERIMENTAL_SCRUBBING_SUPPORT
+   if (mPlayMode == gAudioIO->PLAY_SCRUB) {
+      return mTime;
+   }
+#endif
+   return mT0 + mNumFrames / mRate;
 }
 
 double AudioIO::PauseTime()

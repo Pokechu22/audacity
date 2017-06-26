@@ -435,7 +435,7 @@ private:
    void OutputEvent();
    void FillMidiBuffers();
    void GetNextEvent();
-   double AudioTime() { /*return mT0 + mNumFrames / mRate;*/ return mTime; }
+   double AudioTime();
    double PauseTime();
    void AllNotesOff();
 #endif
