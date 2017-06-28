@@ -3906,10 +3906,7 @@ void AudioIO::OutputEvent()
       if (mNextEvent->is_note() && !mSendMidiState) {
          // Pitch and velocity
          data1 = mNextEvent->get_pitch();
-         // Poke 6-7-17: If audio playback is going in reverse, we want to reverse note ons and offs.
-         // This isn't perfect (for instance, bends will not be accurate, as they apply backwards)
-         // but it's better than playing note offs before note ons.if (mNextIsNoteOn ^ ReversedTime()) {
-         if (mNextIsNoteOn ^ ReversedTime()) {
+         if (mNextIsNoteOn) {
             data2 = mNextEvent->get_loud(); // get velocity
             int offset = mNextEventTrack->GetVelocity();
             data2 += offset; // offset comes from per-track slider
