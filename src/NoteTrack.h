@@ -98,13 +98,6 @@ class AUDACITY_DLL_API NoteTrack final
    bool ExportMIDI(const wxString &f) const;
    bool ExportAllegro(const wxString &f) const;
 
-/* REQUIRES PORTMIDI */
-//   int GetLastMidiPosition() const { return mLastMidiPosition; }
-//   void SetLastMidiPosition( int position )
-//   {
-//      mLastMidiPosition = position;
-//   }
-
    // High-level editing
    Track::Holder Cut  (double t0, double t1) override;
    Track::Holder Copy (double t0, double t1, bool forClipboard = true) const override;
@@ -237,7 +230,6 @@ class AUDACITY_DLL_API NoteTrack final
    int mStartBottomNote;
    int mPitchHeight;
    int mVisibleChannels; // bit set of visible channels
-   int mLastMidiPosition;
 
 protected:
    std::shared_ptr<TrackControls> GetControls() override;
