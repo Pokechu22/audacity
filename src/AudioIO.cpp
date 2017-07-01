@@ -73,24 +73,24 @@
   Normally, the current time during playback is given by the variable
   mTime. mTime normally advances by frames / samplerate each time an
   audio buffer is output by the audio callback. However, Audacity has
-  a speed control that can perform continuously variable time stretching
+  a time track that can perform continuously variable time stretching
   on audio. This is achieved in two places: the playback "mixer" that
   generates the samples for output processes the audio according to
-  the speed control. In a separate algorithm, the audio callback updates
+  the time track. In a separate algorithm, the audio callback updates
   mTime by (frames / samplerate) * factor, where factor reflects the
   speed at mTime. This effectively integrates speed to get position.
   Negative speeds are allowed too, for instance in scrubbing.
 
+  (Editorial note: Wouldn't it make more sense to display audio at the
+  correct time and allow users to stretch audio the way they can stretch
+  MIDI?)
+
   \par Midi Time
-  MIDI is not warped according to the speed control. This might be
-  something that should be changed. (Editorial note: Wouldn't it
-  make more sense to display audio at the correct time and allow
-  users to stretch audio the way they can stretch MIDI?) For now,
-  MIDI plays at 1 second per second, so it requires an unwarped clock.
-  In fact, MIDI time synchronization requires a millisecond clock that
-  does not pause. Note that mTime will stop progress when the Pause
-  button is pressed, even though audio samples (zeros) continue to
-  be output.
+  For now, MIDI plays at 1 second per second, so it requires an unwarped
+  clock. In fact, MIDI time synchronization requires a millisecond clock
+  that does not pause. Note that mTime will stop progress when the Pause
+  button is pressed, even though audio samples (zeros) continue to be
+  output.
 
   \par
   Therefore, we define the following interface for MIDI timing:
@@ -125,13 +125,11 @@
 
   \par
   The difference AudioTime() - PauseTime() is the time "cursor" for
-  MIDI. When the speed control is used, MIDI and Audio will become
-  unsynchronized. In particular, MIDI will not be synchronized with
-  the visual cursor, which moves with scaled time reported in mTime.
+  MIDI.
 
   \par Midi Synchronization
   The goal of MIDI playback is to deliver MIDI messages synchronized to
-  audio (assuming no speed variation for now). If a midi event has time
+  audio (assuming no time track for now). If a midi event has time
   tmidi, then the timestamp for that message should be \n
   timestamp (in seconds) = tmidi + PauseTime() + 1.0 - latency.\n
   (This is actually off by 1ms; see "PortMidi Latency Parameter" below for
@@ -184,6 +182,11 @@
   seem too complicated to describe everything in complete detail in one
   place.
 
+  \par Midi with a time track
+  When a variable-speed time track is present, MIDI events are output
+  with the times used by the time track (rather than the raw times).
+  This ensures MIDI is synchronized with audio.
+
   \par Midi While Recording Only
   All of the midi-to-audio synchronization is of course meaningless when
   audio is not playing. If only recording, there is the problem that
@@ -226,6 +229,18 @@
   normally incremented by the audio callback, but if there is no
   audio playback or recording, it is set to 1 at the end of
   initialization.
+
+  \par MIDI while scrubbing
+  When scrubbing, audio playback is at varied speeds, which cannot be
+  predicted in advance.  As such, timestamp-based playback is completely
+  disabled (a latency value of 0 is passed to portmidi) and MIDI events
+  are simply output when their time is reached.  Additionally,
+  AudioTime() returns mTime instead of attempting to calculate the time
+  based off of the number of frames.
+
+  Scrubbing can happen in reverse.  Currently, this is not supported for
+  MIDI playback, as it would require reversing the MIDI iterator, and
+  additionally, the order events are provided (for instance, pitch bends).
 
   \par NoteTrack PlayLooped
   When mPlayLooped is true, output is supposed to loop from mT0 to mT1.
