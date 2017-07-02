@@ -96,8 +96,7 @@
 /* define as prefix where Audacity is installed */
 #undef INSTALL_PREFIX
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Name of package */
@@ -160,6 +159,9 @@
 
 /* Define if Nyquist support should be enabled */
 #undef USE_NYQUIST
+
+/* Define if midi support should be enabled */
+#undef USE_PORTMIDI
 
 /* Define if PortMixer support should be enabled */
 #undef USE_PORTMIXER
