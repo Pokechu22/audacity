@@ -1,6 +1,6 @@
 dnl Please increment the serial number below whenever you alter this macro
 dnl for the benefit of automatic macro update systems
-# audacity_checklib_portaudio.m4 serial 2
+# audacity_checklib_portaudio.m4 serial 3
 
 AC_DEFUN([AUDACITY_CHECKLIB_PORTAUDIO], [
    AC_ARG_WITH(portaudio,
@@ -17,10 +17,17 @@ AC_DEFUN([AUDACITY_CHECKLIB_PORTAUDIO], [
    if test "$PORTAUDIO_SYSTEM_AVAILABLE" = "yes"; then
       AC_EGREP_HEADER([Pa_GetStreamHostApiType], [portaudio.h],
                       [have_portaudio_support=yes], [have_portaudio_support=no])
+      AC_EGREP_HEADER([PaUtil_GetTime], [common/pa_util.h],
+                      [have_pautil_support=yes], [have_pautil_support=no])
 
       if test "$have_portaudio_support" = "yes"; then
-         PORTAUDIO_SYSTEM_AVAILABLE="yes"
-         AC_MSG_NOTICE([portaudio19 library is available as system library])
+         if test "$have_pautil_support" = "yes"; then
+            PORTAUDIO_SYSTEM_AVAILABLE="yes"
+            AC_MSG_NOTICE([portaudio19 library is available as system library])
+         else
+            PORTAUDIO_SYSTEM_AVAILABLE="no"
+            AC_MSG_NOTICE([portaudio19 library is available as system library, but does not have the PaUtil_GetTime function.])
+         fi
       else
          PORTAUDIO_SYSTEM_AVAILABLE="no"
          AC_MSG_NOTICE([portaudio19 library is available as system library, but does not have the Pa_GetStreamHostApiType function.])

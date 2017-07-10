@@ -293,9 +293,9 @@ writing audio.
 #ifdef EXPERIMENTAL_MIDI_OUT
    #define MIDI_SLEEP 10 /* milliseconds */
    #define ROUND(x) (int) ((x)+0.5)
-   //#include <string.h>
-   #include "../lib-src/portmidi/pm_common/portmidi.h"
-   #include "../lib-src/portaudio-v19/src/common/pa_util.h"
+
+   #include "portmidi.h"
+   #include "../lib-src/portaudio-v19/src/common/pa_util.h" // TODO: Is this header actually anywhere else?
    #include "NoteTrack.h"
 #endif
 
