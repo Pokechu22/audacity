@@ -22416,11 +22416,30 @@ else
 fi
 rm -f conftest*
 
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <common/pa_util.h>
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "PaUtil_GetTime" >/dev/null 2>&1; then :
+  have_pautil_support=yes
+else
+  have_pautil_support=no
+fi
+rm -f conftest*
+
 
       if test "$have_portaudio_support" = "yes"; then
-         PORTAUDIO_SYSTEM_AVAILABLE="yes"
-         { $as_echo "$as_me:${as_lineno-$LINENO}: portaudio19 library is available as system library" >&5
+         if test "$have_pautil_support" = "yes"; then
+            PORTAUDIO_SYSTEM_AVAILABLE="yes"
+            { $as_echo "$as_me:${as_lineno-$LINENO}: portaudio19 library is available as system library" >&5
 $as_echo "$as_me: portaudio19 library is available as system library" >&6;}
+         else
+            PORTAUDIO_SYSTEM_AVAILABLE="no"
+            { $as_echo "$as_me:${as_lineno-$LINENO}: portaudio19 library is available as system library, but does not have the PaUtil_GetTime function." >&5
+$as_echo "$as_me: portaudio19 library is available as system library, but does not have the PaUtil_GetTime function." >&6;}
+         fi
       else
          PORTAUDIO_SYSTEM_AVAILABLE="no"
          { $as_echo "$as_me:${as_lineno-$LINENO}: portaudio19 library is available as system library, but does not have the Pa_GetStreamHostApiType function." >&5
