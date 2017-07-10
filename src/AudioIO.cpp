@@ -283,10 +283,18 @@ writing audio.
 #ifdef EXPERIMENTAL_MIDI_OUT
    #define MIDI_SLEEP 10 /* milliseconds */
    #define ROUND(x) (int) ((x)+0.5)
-   //#include <string.h>
-   #include "../lib-src/portmidi/pm_common/portmidi.h"
-   #include "../lib-src/portaudio-v19/src/common/pa_util.h"
+
+   #include "portmidi.h"
    #include "NoteTrack.h"
+
+   // Poke 7-18-17: We're accessing a method that isn't part of PA's public API.
+   // To make matters worse, this method sometimes links as C, and sometimes as C++.
+   // This method is normally declared in lib-src/portaudio-v19/src/common/pa_util.h
+   #ifdef PAUTIL_CPP
+      double PaUtil_GetTime( void );
+   #else
+      extern "C" double PaUtil_GetTime( void );
+   #endif
 #endif
 
 #ifdef EXPERIMENTAL_AUTOMATED_INPUT_LEVEL_ADJUSTMENT
