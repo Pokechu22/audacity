@@ -17,6 +17,7 @@
 #include "Audacity.h"
 #include "NoteTrack.h"
 #include "Experimental.h"
+#include "InconsistencyException.h"
 
 #include <wx/dc.h>
 #include <wx/brush.h>
