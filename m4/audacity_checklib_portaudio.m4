@@ -17,8 +17,17 @@ AC_DEFUN([AUDACITY_CHECKLIB_PORTAUDIO], [
    if test "$PORTAUDIO_SYSTEM_AVAILABLE" = "yes"; then
       AC_EGREP_HEADER([Pa_GetStreamHostApiType], [portaudio.h],
                       [have_portaudio_support=yes], [have_portaudio_support=no])
-      AC_EGREP_HEADER([PaUtil_GetTime], [common/pa_util.h],
-                      [have_pautil_support=yes], [have_pautil_support=no])
+      dnl Check if PaUtil_GetTime is usable locally
+      AC_LINK_IFELSE(
+         [AC_LANG_PROGRAM(
+            [[
+               #ifdef __cplusplus
+               extern "C"
+               #endif
+               double PaUtil_GetTime( void );
+            ]],
+            [[ PaUtil_GetTime();]]
+         )], [have_pautil_support=yes], [have_pautil_support=no])
 
       if test "$have_portaudio_support" = "yes"; then
          if test "$have_pautil_support" = "yes"; then
@@ -26,7 +35,7 @@ AC_DEFUN([AUDACITY_CHECKLIB_PORTAUDIO], [
             AC_MSG_NOTICE([portaudio19 library is available as system library])
          else
             PORTAUDIO_SYSTEM_AVAILABLE="no"
-            AC_MSG_NOTICE([portaudio19 library is available as system library, but does not have the PaUtil_GetTime function.])
+            AC_MSG_NOTICE([portaudio19 library is available as system library, but the PaUtil_GetTime function is not linkable.])
          fi
       else
          PORTAUDIO_SYSTEM_AVAILABLE="no"
