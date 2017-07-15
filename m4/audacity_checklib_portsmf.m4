@@ -2,13 +2,13 @@ dnl Add Audacity / portSMF license?
 dnl
 dnl Please increment the serial number below whenever you alter this macro
 dnl for the benefit of automatic macro update systems
-# audacity_checklib_portsmf.m4 serial 2
+# audacity_checklib_portsmf.m4 serial 3
 
 AC_DEFUN([AUDACITY_CHECKLIB_PORTSMF], [
 
-   AC_ARG_WITH(midi,
-               [AS_HELP_STRING([--with-midi],
-                               [use portSMF for Midi support])],
+   AC_ARG_WITH(portsmf,
+               [AS_HELP_STRING([--with-portsmf],
+                               [use portSMF for MIDI reading support])],
                PORTSMF_ARGUMENT=$withval,
                PORTSMF_ARGUMENT="unspecified")
 
@@ -50,6 +50,6 @@ AC_DEFUN([AUDACITY_CONFIG_PORTSMF], [
 
    if test "$PORTSMF_USE_LOCAL" = yes -o "$PORTSMF_USE_SYSTEM" = yes; then
       AC_DEFINE(USE_MIDI, 1,
-                [Define if midi support should be enabled])
+                [Define if MIDI reading support via portSMF should be enabled])
    fi
 ])
