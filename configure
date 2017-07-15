@@ -962,7 +962,7 @@ with_libvamp
 with_libvorbis
 with_lv2
 with_portaudio
-with_midi
+with_portsmf
 with_portmidi
 with_widgetextra
 enable_audiounits
@@ -1728,7 +1728,7 @@ Optional Packages:
   --with-libvorbis        use libvorbis for Ogg Vorbis support
   --with-lv2              use for adding LV2 plug-in support
   --with-portaudio        use portaudio19
-  --with-midi             use portSMF for Midi support
+  --with-portsmf          use portSMF for MIDI reading support
   --with-portmidi         use PortMIDI for MIDI playback support
   --with-widgetextra      which libwidgetextra to use (required):
                           [system,local]
@@ -22489,9 +22489,9 @@ $as_echo "$as_me: portaudio19 library is NOT available in the local tree" >&6;}
 
 
 
-# Check whether --with-midi was given.
-if test "${with_midi+set}" = set; then :
-  withval=$with_midi; PORTSMF_ARGUMENT=$withval
+# Check whether --with-portsmf was given.
+if test "${with_portsmf+set}" = set; then :
+  withval=$with_portsmf; PORTSMF_ARGUMENT=$withval
 else
   PORTSMF_ARGUMENT="unspecified"
 fi
