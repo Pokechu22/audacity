@@ -155,7 +155,7 @@
 /* Define if LV2 support should be enabled */
 #undef USE_LV2
 
-/* Define if midi support should be enabled */
+/* Define if MIDI reading support via portSMF should be enabled */
 #undef USE_MIDI
 
 /* Define if Nyquist support should be enabled */
