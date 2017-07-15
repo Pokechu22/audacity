@@ -156,11 +156,14 @@
 /* Define if LV2 support should be enabled */
 #define USE_LV2 1
 
-/* Define if midi support should be enabled */
+/* Define if MIDI reading support via portSMF should be enabled */
 #define USE_MIDI 1
 
 /* Define if Nyquist support should be enabled */
 #define USE_NYQUIST 1
+
+/* Define if MIDI playback support using PortMIDI should be enabled */
+#define USE_PORTMIDI 1
 
 /* Define if PortMixer support should be enabled */
 #define USE_PORTMIXER 1
