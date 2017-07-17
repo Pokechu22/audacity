@@ -537,12 +537,6 @@ int ControlToolBar::PlayPlayRegion(const SelectedRegion &selectedRegion,
    if (!CanStopAudioStream())
       return -1;
 
-   bool useMidi = true;
-
-   // Remove these lines to experiment with scrubbing/seeking of note tracks
-   if (options.pScrubbingOptions)
-      useMidi = false;
-
    // Uncomment this for laughs!
    // backwards = true;
 
@@ -588,7 +582,7 @@ int ControlToolBar::PlayPlayRegion(const SelectedRegion &selectedRegion,
    for (Track *trk = iter.First(); trk; trk = iter.Next()) {
       if (trk->GetKind() == Track::Wave
 #ifdef EXPERIMENTAL_MIDI_OUT
-         || (trk->GetKind() == Track::Note && useMidi)
+         || trk->GetKind() == Track::Note
 #endif
          ) {
          hasaudio = true;
@@ -673,9 +667,7 @@ int ControlToolBar::PlayPlayRegion(const SelectedRegion &selectedRegion,
                mCutPreviewTracks->GetWaveTrackConstArray(false),
                WaveTrackArray(),
 #ifdef EXPERIMENTAL_MIDI_OUT
-               useMidi
-                  ? mCutPreviewTracks->GetNoteTrackArray(false)
-                  : NoteTrackArray(),
+               mCutPreviewTracks->GetNoteTrackArray(false),
 #endif
                tcp0, tcp1, myOptions);
          }
@@ -693,9 +685,7 @@ int ControlToolBar::PlayPlayRegion(const SelectedRegion &selectedRegion,
          token = gAudioIO->StartStream(t->GetWaveTrackConstArray(false),
                                        WaveTrackArray(),
 #ifdef EXPERIMENTAL_MIDI_OUT
-                                       useMidi
-                                          ? t->GetNoteTrackArray(false)
-                                          : NoteTrackArray(),
+                                       t->GetNoteTrackArray(false),
 #endif
                                        t0, t1, options);
       }
