@@ -22417,10 +22417,67 @@ fi
 rm -f conftest*
 
 
+                        old_LIBS=$LIBS
+      export LIBS=$PORTAUDIO_LIBS
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+               extern "C" double PaUtil_GetTime( void );
+
+int
+main ()
+{
+ PaUtil_GetTime();
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  pautil_links_c=yes
+else
+  pautil_links_c=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+               double PaUtil_GetTime( void );
+
+int
+main ()
+{
+ PaUtil_GetTime();
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  pautil_links_cpp=yes
+else
+  pautil_links_cpp=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+      export LIBS=$old_LIBS
+
       if test "$have_portaudio_support" = "yes"; then
-         PORTAUDIO_SYSTEM_AVAILABLE="yes"
-         { $as_echo "$as_me:${as_lineno-$LINENO}: portaudio19 library is available as system library" >&5
-$as_echo "$as_me: portaudio19 library is available as system library" >&6;}
+         if test "$pautil_links_c" = "yes"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: portaudio19 library is available as system library and PaUtil_GetTime is linkable as C" >&5
+$as_echo "$as_me: portaudio19 library is available as system library and PaUtil_GetTime is linkable as C" >&6;}
+         elif test "$pautil_links_cpp" = "yes"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: portaudio19 library is available as system library and PaUtil_GetTime is linkable as C++" >&5
+$as_echo "$as_me: portaudio19 library is available as system library and PaUtil_GetTime is linkable as C++" >&6;}
+
+$as_echo "#define PAUTIL_CPP 1" >>confdefs.h
+
+         else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: portaudio19 library is available as system library, but PaUtil_GetTime is not linkable" >&5
+$as_echo "$as_me: portaudio19 library is available as system library, but PaUtil_GetTime is not linkable" >&6;}
+            PORTAUDIO_SYSTEM_AVAILABLE="no"
+         fi
       else
          PORTAUDIO_SYSTEM_AVAILABLE="no"
          { $as_echo "$as_me:${as_lineno-$LINENO}: portaudio19 library is available as system library, but does not have the Pa_GetStreamHostApiType function." >&5

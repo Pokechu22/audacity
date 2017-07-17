@@ -1,6 +1,6 @@
 dnl Please increment the serial number below whenever you alter this macro
 dnl for the benefit of automatic macro update systems
-# audacity_checklib_portaudio.m4 serial 2
+# audacity_checklib_portaudio.m4 serial 3
 
 AC_DEFUN([AUDACITY_CHECKLIB_PORTAUDIO], [
    AC_ARG_WITH(portaudio,
@@ -18,9 +18,38 @@ AC_DEFUN([AUDACITY_CHECKLIB_PORTAUDIO], [
       AC_EGREP_HEADER([Pa_GetStreamHostApiType], [portaudio.h],
                       [have_portaudio_support=yes], [have_portaudio_support=no])
 
+      dnl Check if PaUtil_GetTime is usable locally
+      dnl AC_LINK_IFELSE appears to require $LIBS to be set; hack that into place.
+      dnl Poke - TODO: Is there a correct way of doing this?
+      old_LIBS=$LIBS
+      export LIBS=$PORTAUDIO_LIBS
+      AC_LINK_IFELSE(
+         [AC_LANG_PROGRAM(
+            [[
+               extern "C" double PaUtil_GetTime( void );
+            ]],
+            [[ PaUtil_GetTime();]]
+         )], [pautil_links_c=yes], [pautil_links_c=no])
+      AC_LINK_IFELSE(
+         [AC_LANG_PROGRAM(
+            [[
+               double PaUtil_GetTime( void );
+            ]],
+            [[ PaUtil_GetTime();]]
+         )], [pautil_links_cpp=yes], [pautil_links_cpp=no])
+      export LIBS=$old_LIBS
+
       if test "$have_portaudio_support" = "yes"; then
-         PORTAUDIO_SYSTEM_AVAILABLE="yes"
-         AC_MSG_NOTICE([portaudio19 library is available as system library])
+         if test "$pautil_links_c" = "yes"; then
+            AC_MSG_NOTICE([portaudio19 library is available as system library and PaUtil_GetTime is linkable as C])
+         elif test "$pautil_links_cpp" = "yes"; then
+            AC_MSG_NOTICE([portaudio19 library is available as system library and PaUtil_GetTime is linkable as C++])
+            AC_DEFINE(PAUTIL_CPP, 1,
+                [Defined if the system version of PaUtil_GetTime links as C++, not C.])
+         else
+            AC_MSG_NOTICE([portaudio19 library is available as system library, but PaUtil_GetTime is not linkable])
+            PORTAUDIO_SYSTEM_AVAILABLE="no"
+         fi
       else
          PORTAUDIO_SYSTEM_AVAILABLE="no"
          AC_MSG_NOTICE([portaudio19 library is available as system library, but does not have the Pa_GetStreamHostApiType function.])

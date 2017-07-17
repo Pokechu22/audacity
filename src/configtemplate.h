@@ -121,6 +121,9 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Defined if the system version of PaUtil_GetTime links as C++, not C. */
+#undef PAUTIL_CPP
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
