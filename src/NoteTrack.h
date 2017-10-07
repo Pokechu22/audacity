@@ -167,9 +167,9 @@ class AUDACITY_DLL_API NoteTrack final
    int GetOctaveBottom(int oct) const {
       return IPitchToY(oct * 12) + GetPitchHeight(1) + 1;
    }
-   // Y coordinate for given floating point pitch (rounded to int)
+   // Y coordinate for given floating point pitch, offset from lines as needed for non-integer pitches
    int PitchToY(double p) const {
-      return IPitchToY((int) (p + 0.5));
+      return IPitchToY((int)p) + (int)(GetPitchHeight(1) * (p - (int)p));
    }
    // Integer pitch corresponding to a Y coordinate
    int YToIPitch(int y);
