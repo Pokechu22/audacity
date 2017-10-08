@@ -3086,11 +3086,7 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
 
                   nr.x = TIME_TO_X(xx);
 
-                  if (drawLines) {
-                     AColor::LightMIDIChannel(&dc, note->chan + 1);
-                     AColor::Line(dc, nr.x, nr.y, nr.x, nr.y + nr.height-2);
-                     nr.x++;
-                  }
+                  bool first = true;
 
                   for (auto itr = start; ++itr != end; ) {
                      auto t2 = TIME_TO_X(itr->first + track->GetOffset());
@@ -3125,6 +3121,9 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                         dc.DrawRectangle(nr);
                         if (drawLines) {
                            AColor::LightMIDIChannel(&dc, note->chan + 1);
+                           if (first) {
+                              AColor::Line(dc, nr.x, nr.y, nr.x, nr.y + nr.height-2);
+                           }
                            AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-2, nr.y);
                            AColor::DarkMIDIChannel(&dc, note->chan + 1);
                            AColor::Line(dc, nr.x, nr.y+nr.height-1,
@@ -3135,6 +3134,7 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                      nr.x = t2;
                      curPitchOffset = itr->second;
                      nr.y = track->PitchToY(note->pitch + curPitchOffset);
+                     first = false;
                   }
 
                   nr.width = TIME_TO_X(x1) - nr.x;
@@ -3168,6 +3168,9 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                      dc.DrawRectangle(nr);
                      if (drawLines) {
                         AColor::LightMIDIChannel(&dc, note->chan + 1);
+                        if (first) {
+                           AColor::Line(dc, nr.x, nr.y, nr.x, nr.y + nr.height-2);
+                        }
                         AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-2, nr.y);
                         AColor::DarkMIDIChannel(&dc, note->chan + 1);
                         AColor::Line(dc, nr.x, nr.y+nr.height-1,
