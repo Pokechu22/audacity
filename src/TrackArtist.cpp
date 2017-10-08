@@ -3017,12 +3017,44 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
    // We want to draw in seconds, so we need to convert to seconds
    seq->convert_to_seconds();
 
+   // Pitch bend changes, for each channel (0-15, and 17 for out of bounds)
+   // Unit is semitones
+   std::map<double, double> pitchBendChanges[17];
+   {
+      for (int i = 0; i < 17; i++)
+      {
+         pitchBendChanges[i][0] = 0;
+      }
+      Alg_iterator iterator(seq, false);
+      iterator.begin();
+      //for every event
+      Alg_event_ptr evt;
+      while (0 != (evt = iterator.next())) {
+         if (evt->is_update()) {
+            Alg_update_ptr update = (Alg_update_ptr) evt;
+            if (update->get_type_code() != 2) {  // 2: pitch bend
+               continue;
+            }
+            double bend = update->get_real_value();
+            const double SEMITONES_PER_BEND = 2;
+            // A bend of +1 is 2 semitones up; a bend of -1 is 2 semitones down
+
+            int channel = update->chan;
+            if (channel < 0 || channel >= 16) {
+               channel = 16;
+            }
+
+            pitchBendChanges[channel][update->time] = bend * SEMITONES_PER_BEND;
+         }
+      }
+   }
+
    Alg_iterator iterator(seq, false);
    iterator.begin();
    //for every event
    Alg_event_ptr evt;
    while (0 != (evt = iterator.next())) {
-      if (evt->get_type() == 'n') { // 'n' means a note
+      if (evt->is_note()) {
          Alg_note_ptr note = (Alg_note_ptr) evt;
          // if the note's channel is visible
          if (track->IsVisibleChan(evt->chan)) {
@@ -3031,27 +3063,96 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
             if (xx < h1 && x1 > h) { // omit if outside box
                const char *shape = NULL;
                if (note->loud > 0.0 || 0 == (shape = IsShape(note))) {
+                  // Look for pitch bends
+                  int channel = evt->chan;
+                  if (channel < 0 || channel >= 16) {
+                     channel = 16;
+                  }
+                  // Using upper_bound-- rather than lower_bound allows us to get the current pitch
+                  // We know that there is always a bend at time 0 set to 0 (manually added)
+                  // so decrementing upper_bound at 0 will return that (rather than being undefined)
+                  auto start = pitchBendChanges[channel].upper_bound(xx);
+                  wxASSERT(start != pitchBendChanges[channel].begin());
+                  start--;
+                  auto end = pitchBendChanges[channel].upper_bound(x1);
+
+                  double curPitchOffset = start->second;
+
+                  bool drawLines = (track->GetPitchHeight(1) > 2);
+
                   wxRect nr; // "note rectangle"
-                  nr.y = track->PitchToY(note->pitch);
+                  nr.y = track->PitchToY(note->pitch + curPitchOffset);
                   nr.height = track->GetPitchHeight(1);
 
                   nr.x = TIME_TO_X(xx);
-                  nr.width = TIME_TO_X(x1) - nr.x;
 
-                  if (nr.y + nr.height < rect.y + marg + 3) {
+                  bool first = true;
+
+                  for (auto itr = start; ++itr != end; ) {
+                     auto t2 = TIME_TO_X(itr->first + track->GetOffset());
+                     nr.width = t2 - nr.x;
+
+                     if (nr.y + nr.height < rect.y + marg + 3) {
                         // too high for window
                         nr.y = rect.y;
                         nr.height = marg;
                         dc.SetBrush(*wxBLACK_BRUSH);
                         dc.SetPen(*wxBLACK_PEN);
                         dc.DrawRectangle(nr);
-                  } else if (nr.y >= rect.y + rect.height - marg - 1) {
+                     } else if (nr.y >= rect.y + rect.height - marg - 1) {
                         // too low for window
                         nr.y = rect.y + rect.height - marg;
                         nr.height = marg;
                         dc.SetBrush(*wxBLACK_BRUSH);
                         dc.SetPen(*wxBLACK_PEN);
                         dc.DrawRectangle(nr);
+                     } else {
+                        if (nr.y + nr.height > rect.y + rect.height - marg)
+                           nr.height = rect.y + rect.height - nr.y;
+                        if (nr.y < rect.y + marg) {
+                           int offset = rect.y + marg - nr.y;
+                           nr.height -= offset;
+                           nr.y += offset;
+                        }
+                        if (muted)
+                           AColor::LightMIDIChannel(&dc, note->chan + 1);
+                        else
+                           AColor::MIDIChannel(&dc, note->chan + 1);
+                        dc.DrawRectangle(nr);
+                        if (drawLines) {
+                           AColor::LightMIDIChannel(&dc, note->chan + 1);
+                           if (first) {
+                              AColor::Line(dc, nr.x, nr.y, nr.x, nr.y + nr.height-1);
+                           }
+                           AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-1, nr.y);
+                           AColor::DarkMIDIChannel(&dc, note->chan + 1);
+                           AColor::Line(dc, nr.x, nr.y+nr.height-1,
+                                 nr.x+nr.width-1, nr.y+nr.height-1);
+                        }
+                     }
+
+                     nr.x = t2;
+                     curPitchOffset = itr->second;
+                     nr.y = track->PitchToY(note->pitch + curPitchOffset);
+                     first = false;
+                  }
+
+                  nr.width = TIME_TO_X(x1) - nr.x;
+
+                  if (nr.y + nr.height < rect.y + marg + 3) {
+                     // too high for window
+                     nr.y = rect.y;
+                     nr.height = marg;
+                     dc.SetBrush(*wxBLACK_BRUSH);
+                     dc.SetPen(*wxBLACK_PEN);
+                     dc.DrawRectangle(nr);
+                  } else if (nr.y >= rect.y + rect.height - marg - 1) {
+                     // too low for window
+                     nr.y = rect.y + rect.height - marg;
+                     nr.height = marg;
+                     dc.SetBrush(*wxBLACK_BRUSH);
+                     dc.SetPen(*wxBLACK_PEN);
+                     dc.DrawRectangle(nr);
                   } else {
                      if (nr.y + nr.height > rect.y + rect.height - marg)
                         nr.height = rect.y + rect.height - nr.y;
@@ -3060,22 +3161,27 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                         nr.height -= offset;
                         nr.y += offset;
                      }
-
                      if (muted)
                         AColor::LightMIDIChannel(&dc, note->chan + 1);
                      else
                         AColor::MIDIChannel(&dc, note->chan + 1);
                      dc.DrawRectangle(nr);
-                     if (track->GetPitchHeight(1) > 2) {
+                     if (drawLines) {
                         AColor::LightMIDIChannel(&dc, note->chan + 1);
-                        AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-2, nr.y);
-                        AColor::Line(dc, nr.x, nr.y, nr.x, nr.y + nr.height-2);
+                        if (first) {
+                           AColor::Line(dc, nr.x, nr.y, nr.x, nr.y + nr.height-1);
+                        }
+                        AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-1, nr.y);
                         AColor::DarkMIDIChannel(&dc, note->chan + 1);
-                        AColor::Line(dc, nr.x+nr.width-1, nr.y,
-                              nr.x+nr.width-1, nr.y+nr.height-1);
                         AColor::Line(dc, nr.x, nr.y+nr.height-1,
                               nr.x+nr.width-1, nr.y+nr.height-1);
                      }
+                  }
+
+                  if (drawLines) {
+                     AColor::DarkMIDIChannel(&dc, note->chan + 1);
+                     AColor::Line(dc, nr.x+nr.width-1, nr.y,
+                           nr.x+nr.width-1, nr.y+nr.height-1);
                   }
                } else if (shape) {
                   // draw a shape according to attributes
