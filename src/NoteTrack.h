@@ -168,9 +168,7 @@ class AUDACITY_DLL_API NoteTrack final
       return IPitchToY(oct * 12) + GetPitchHeight(1) + 1;
    }
    // Y coordinate for given floating point pitch, offset from lines as needed for non-integer pitches
-   int PitchToY(double p) const {
-      return IPitchToY((int)p) + (int)(GetPitchHeight(1) * (p - (int)p));
-   }
+   int PitchToY(double p) const;
    // Integer pitch corresponding to a Y coordinate
    int YToIPitch(int y);
    // map pitch class number (0-11) to pixel offset from bottom of octave
