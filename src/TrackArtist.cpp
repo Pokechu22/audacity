@@ -3122,9 +3122,9 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                         if (drawLines) {
                            AColor::LightMIDIChannel(&dc, note->chan + 1);
                            if (first) {
-                              AColor::Line(dc, nr.x, nr.y, nr.x, nr.y + nr.height-2);
+                              AColor::Line(dc, nr.x, nr.y, nr.x, nr.y + nr.height-1);
                            }
-                           AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-2, nr.y);
+                           AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-1, nr.y);
                            AColor::DarkMIDIChannel(&dc, note->chan + 1);
                            AColor::Line(dc, nr.x, nr.y+nr.height-1,
                                  nr.x+nr.width-1, nr.y+nr.height-1);
@@ -3169,9 +3169,9 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                      if (drawLines) {
                         AColor::LightMIDIChannel(&dc, note->chan + 1);
                         if (first) {
-                           AColor::Line(dc, nr.x, nr.y, nr.x, nr.y + nr.height-2);
+                           AColor::Line(dc, nr.x, nr.y, nr.x, nr.y + nr.height-1);
                         }
-                        AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-2, nr.y);
+                        AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-1, nr.y);
                         AColor::DarkMIDIChannel(&dc, note->chan + 1);
                         AColor::Line(dc, nr.x, nr.y+nr.height-1,
                               nr.x+nr.width-1, nr.y+nr.height-1);
