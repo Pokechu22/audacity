@@ -3028,6 +3028,8 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
       char pitchRangeMSB[17];
       // Measures in cents
       char pitchRangeLSB[17];
+      // From -1 to 1
+      double curRawBend[17];
       for (int i = 0; i < 17; i++)
       {
          pitchBendChanges[i][0] = 0;
@@ -3035,6 +3037,7 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
          rpnLSB[i] = 127;
          pitchRangeMSB[i] = 2;
          pitchRangeLSB[i] = 0;
+         curRawBend[i] = 0;
       }
       Alg_iterator iterator(seq, false);
       iterator.begin();
@@ -3057,9 +3060,12 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                // The spec (https://www.midi.org/specifications/item/table-3-control-change-messages-data-bytes-2)
                // doesn't make it clear what should happen if LSB (cents) is greater than 100, so just don't worry
                // about that case
+               curRawBend[channel] = bend;
                double pitchRange = pitchRangeMSB[channel] + .01 * pitchRangeLSB[channel];
                pitchBendChanges[channel][update->time] = bend * pitchRange;
             } else if (typeCode == ALG_CONTROL) {
+               double pitchRange;
+
                const char *name = update->get_attribute();
                // The number of the controller being changed is embedded
                // in the parameter name.
@@ -3076,9 +3082,13 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                      break;
                   case 6:
                      pitchRangeMSB[channel] = value;
+                     pitchRange = value + .01 * pitchRangeLSB[channel];
+                     pitchBendChanges[channel][update->time] = curRawBend[channel] * pitchRange;
                      break;
                   case 38:
                      pitchRangeLSB[channel] = value;
+                     pitchRange = pitchRangeMSB[channel] + .01 * value;
+                     pitchBendChanges[channel][update->time] = curRawBend[channel] * pitchRange;
                      break;
 
                   default: break;
