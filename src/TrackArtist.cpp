@@ -3121,7 +3121,8 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
 
                   wxRect nr; // "note rectangle"
                   nr.y = track->PitchToY(note->pitch + curPitchOffset);
-                  nr.height = track->GetPitchHeight(1);
+                  int pitchHeight = track->GetPitchHeight(1);
+                  nr.height = pitchHeight;
 
                   nr.x = TIME_TO_X(xx);
 
@@ -3146,6 +3147,7 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                         dc.SetPen(*wxBLACK_PEN);
                         dc.DrawRectangle(nr);
                      } else {
+                        nr.height = pitchHeight;
                         if (nr.y + nr.height > rect.y + rect.height - marg)
                            nr.height = rect.y + rect.height - nr.y;
                         if (nr.y < rect.y + marg) {
@@ -3193,6 +3195,7 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                      dc.SetPen(*wxBLACK_PEN);
                      dc.DrawRectangle(nr);
                   } else {
+                     nr.height = pitchHeight;
                      if (nr.y + nr.height > rect.y + rect.height - marg)
                         nr.height = rect.y + rect.height - nr.y;
                      if (nr.y < rect.y + marg) {
