@@ -3021,30 +3021,69 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
    // Unit is semitones
    std::map<double, double> pitchBendChanges[17];
    {
+      // Reserved parameter number
+      char rpnMSB[17];
+      char rpnLSB[17];
+      // Measures in semitones
+      char pitchRangeMSB[17];
+      // Measures in cents
+      char pitchRangeLSB[17];
       for (int i = 0; i < 17; i++)
       {
          pitchBendChanges[i][0] = 0;
+         rpnMSB[i] = 127;
+         rpnLSB[i] = 127;
+         pitchRangeMSB[i] = 2;
+         pitchRangeLSB[i] = 0;
       }
       Alg_iterator iterator(seq, false);
       iterator.begin();
-      //for every event
+
       Alg_event_ptr evt;
       while (0 != (evt = iterator.next())) {
          if (evt->is_update()) {
             Alg_update_ptr update = (Alg_update_ptr) evt;
-            if (update->get_type_code() != 2) {  // 2: pitch bend
-               continue;
-            }
-            double bend = update->get_real_value();
-            const double SEMITONES_PER_BEND = 2;
-            // A bend of +1 is 2 semitones up; a bend of -1 is 2 semitones down
+            auto typeCode = update->get_type_code();
 
             int channel = update->chan;
             if (channel < 0 || channel >= 16) {
                channel = 16;
             }
 
-            pitchBendChanges[channel][update->time] = bend * SEMITONES_PER_BEND;
+            if (typeCode == ALG_BEND) {
+               double bend = update->get_real_value();
+               // A bend of +1 is 2 semitones up; a bend of -1 is 2 semitones down
+
+               // The spec (https://www.midi.org/specifications/item/table-3-control-change-messages-data-bytes-2)
+               // doesn't make it clear what should happen if LSB (cents) is greater than 100, so just don't worry
+               // about that case
+               double pitchRange = pitchRangeMSB[channel] + .01 * pitchRangeLSB[channel];
+               pitchBendChanges[channel][update->time] = bend * pitchRange;
+            } else if (typeCode == ALG_CONTROL) {
+               const char *name = update->get_attribute();
+               // The number of the controller being changed is embedded
+               // in the parameter name.
+               char controller = atoi(name + 7);
+               // Allegro normalizes controller values
+               char value = (int)((update->parameter.r * 127) + .5);
+
+               switch (controller) {
+                  case 101: // MSB
+                     rpnMSB[channel] = value;
+                     break;
+                  case 100: // LSB
+                     rpnLSB[channel] = value;
+                     break;
+                  case 6:
+                     pitchRangeMSB[channel] = value;
+                     break;
+                  case 38:
+                     pitchRangeLSB[channel] = value;
+                     break;
+
+                  default: break;
+               }
+            }
          }
       }
    }
