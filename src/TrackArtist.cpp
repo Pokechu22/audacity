@@ -3071,10 +3071,10 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                   // Using upper_bound-- rather than lower_bound allows us to get the current pitch
                   // We know that there is always a bend at time 0 set to 0 (manually added)
                   // so decrementing upper_bound at 0 will return that (rather than being undefined)
-                  auto start = pitchBendChanges[channel].upper_bound(xx);
+                  auto start = pitchBendChanges[channel].upper_bound(note->time);
                   wxASSERT(start != pitchBendChanges[channel].begin());
                   start--;
-                  auto end = pitchBendChanges[channel].upper_bound(x1);
+                  auto end = pitchBendChanges[channel].upper_bound(note->time + note->dur);
 
                   double curPitchOffset = start->second;
 
