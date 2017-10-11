@@ -3214,13 +3214,10 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                         AColor::DarkMIDIChannel(&dc, note->chan + 1);
                         AColor::Line(dc, nr.x, nr.y+nr.height-1,
                               nr.x+nr.width-1, nr.y+nr.height-1);
+                        // Horizontal end line
+                        AColor::Line(dc, nr.x+nr.width-1, nr.y,
+                              nr.x+nr.width-1, nr.y+nr.height-1);
                      }
-                  }
-
-                  if (drawLines) {
-                     AColor::DarkMIDIChannel(&dc, note->chan + 1);
-                     AColor::Line(dc, nr.x+nr.width-1, nr.y,
-                           nr.x+nr.width-1, nr.y+nr.height-1);
                   }
                } else if (shape) {
                   // draw a shape according to attributes
