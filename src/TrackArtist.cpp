@@ -3175,10 +3175,12 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                            if (first) {
                               AColor::Line(dc, nr.x, nr.y, nr.x, nr.y + nr.height-1);
                            }
-                           AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-1, nr.y);
-                           AColor::DarkMIDIChannel(&dc, note->chan + 1);
-                           AColor::Line(dc, nr.x, nr.y+nr.height-1,
-                                 nr.x+nr.width-1, nr.y+nr.height-1);
+                           if (nr.width >= 1) {
+                              AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-1, nr.y);
+                              AColor::DarkMIDIChannel(&dc, note->chan + 1);
+                              AColor::Line(dc, nr.x, nr.y+nr.height-1,
+                                    nr.x+nr.width-1, nr.y+nr.height-1);
+                           }
                         }
                      }
 
@@ -3223,10 +3225,14 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                         if (first) {
                            AColor::Line(dc, nr.x, nr.y, nr.x, nr.y + nr.height-1);
                         }
-                        AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-1, nr.y);
+                        if (nr.width >= 1) {
+                           AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-1, nr.y);
+                        }
                         AColor::DarkMIDIChannel(&dc, note->chan + 1);
-                        AColor::Line(dc, nr.x, nr.y+nr.height-1,
-                              nr.x+nr.width-1, nr.y+nr.height-1);
+                        if (nr.width >= 1) {
+                           AColor::Line(dc, nr.x, nr.y+nr.height-1,
+                                 nr.x+nr.width-1, nr.y+nr.height-1);
+                        }
                         // Horizontal end line
                         AColor::Line(dc, nr.x+nr.width-1, nr.y,
                               nr.x+nr.width-1, nr.y+nr.height-1);
