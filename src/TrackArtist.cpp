@@ -3017,7 +3017,7 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
    // We want to draw in seconds, so we need to convert to seconds
    seq->convert_to_seconds();
 
-   // Pitch bend changes, for each channel (0-15, and 17 for out of bounds)
+   // Pitch bend changes, for each channel (0-15, and 16 for out of bounds)
    // Unit is semitones
    std::map<double, double> pitchBendChanges[17];
    {
