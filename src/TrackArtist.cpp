@@ -3096,6 +3096,7 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
             }
          }
       }
+      iterator.end();
    }
 
    Alg_iterator iterator(seq, false);
