@@ -567,6 +567,7 @@ const int AColor_midicolors[16][3] = {
 
 void AColor::MIDIChannel(wxDC * dc, int channel /* 1 - 16 */ , int lightness /*=100*/)
 {
+   wxASSERT(lightness >= 0 && lightness <= 200);
    if (channel >= 1 && channel <= 16) {
       const int *colors = AColor_midicolors[channel - 1];
       dc->SetPen(wxPen(wxColour(colors[0],
@@ -582,6 +583,7 @@ void AColor::MIDIChannel(wxDC * dc, int channel /* 1 - 16 */ , int lightness /*=
 
 void AColor::LightMIDIChannel(wxDC * dc, int channel /* 1 - 16 */ , int lightness /*=100*/)
 {
+   wxASSERT(lightness >= 0 && lightness <= 200);
    if (channel >= 1 && channel <= 16) {
       const int *colors = AColor_midicolors[channel - 1];
 
@@ -600,6 +602,7 @@ void AColor::LightMIDIChannel(wxDC * dc, int channel /* 1 - 16 */ , int lightnes
 
 void AColor::DarkMIDIChannel(wxDC * dc, int channel /* 1 - 16 */ , int lightness /*=100*/)
 {
+   wxASSERT(lightness >= 0 && lightness <= 200);
    if (channel >= 1 && channel <= 16) {
       const int *colors = AColor_midicolors[channel - 1];
 
