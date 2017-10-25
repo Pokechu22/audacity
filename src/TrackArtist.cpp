@@ -3087,9 +3087,9 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                            nr.y += offset;
                         }
                         if (muted)
-                           AColor::LightMIDIChannel(&dc, note->chan + 1, 100 + (int)(50 * (note->loud - 64) / 128));
+                           AColor::LightMIDIChannel(&dc, note->chan + 1);
                         else
-                           AColor::MIDIChannel(&dc, note->chan + 1, 100 + (int)(50 * (note->loud - 64) / 128));
+                           AColor::MIDIChannel(&dc, note->chan + 1);
                         dc.DrawRectangle(nr);
                         if (drawLines) {
                            AColor::LightMIDIChannel(&dc, note->chan + 1);
@@ -3137,9 +3137,9 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                         nr.y += offset;
                      }
                      if (muted)
-                        AColor::LightMIDIChannel(&dc, note->chan + 1, 100 + (int)(50 * (note->loud - 64) / 128));
+                        AColor::LightMIDIChannel(&dc, note->chan + 1);
                      else
-                        AColor::MIDIChannel(&dc, note->chan + 1, 100 + (int)(50 * (note->loud - 64) / 128));
+                        AColor::MIDIChannel(&dc, note->chan + 1);
                      dc.DrawRectangle(nr);
                      if (drawLines) {
                         AColor::LightMIDIChannel(&dc, note->chan + 1);
