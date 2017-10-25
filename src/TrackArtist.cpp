@@ -3046,119 +3046,24 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
                   start--;
                   auto end = pitchBendChanges[channel].upper_bound(note->time + note->dur);
 
-                  double curPitchOffset = start->second;
-
-                  bool drawLines = (track->GetPitchHeight(1) > 2);
-
-                  wxRect nr; // "note rectangle"
-                  nr.y = track->PitchToY(note->pitch + curPitchOffset);
+                  int y = track->PitchToY(note->pitch + start->second);
                   int pitchHeight = track->GetPitchHeight(1);
-                  nr.height = pitchHeight;
 
-                  nr.x = TIME_TO_X(xx);
+                  int x = TIME_TO_X(xx);
 
                   bool first = true;
 
                   for (auto itr = start; ++itr != end; ) {
-                     auto t2 = TIME_TO_X(itr->first + track->GetOffset());
-                     nr.width = t2 - nr.x;
+                     int x2 = TIME_TO_X(itr->first + track->GetOffset());
 
-                     if (nr.y + nr.height < rect.y + marg + 3) {
-                        // too high for window
-                        nr.y = rect.y;
-                        nr.height = marg;
-                        dc.SetBrush(*wxBLACK_BRUSH);
-                        dc.SetPen(*wxBLACK_PEN);
-                        dc.DrawRectangle(nr);
-                     } else if (nr.y >= rect.y + rect.height - marg - 1) {
-                        // too low for window
-                        nr.y = rect.y + rect.height - marg;
-                        nr.height = marg;
-                        dc.SetBrush(*wxBLACK_BRUSH);
-                        dc.SetPen(*wxBLACK_PEN);
-                        dc.DrawRectangle(nr);
-                     } else {
-                        nr.height = pitchHeight;
-                        if (nr.y + nr.height > rect.y + rect.height - marg)
-                           nr.height = rect.y + rect.height - nr.y;
-                        if (nr.y < rect.y + marg) {
-                           int offset = rect.y + marg - nr.y;
-                           nr.height -= offset;
-                           nr.y += offset;
-                        }
-                        if (muted)
-                           AColor::LightMIDIChannel(&dc, note->chan + 1);
-                        else
-                           AColor::MIDIChannel(&dc, note->chan + 1);
-                        dc.DrawRectangle(nr);
-                        if (drawLines) {
-                           AColor::LightMIDIChannel(&dc, note->chan + 1);
-                           if (first) {
-                              AColor::Line(dc, nr.x, nr.y, nr.x, nr.y + nr.height-1);
-                           }
-                           if (nr.width >= 1) {
-                              AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-1, nr.y);
-                              AColor::DarkMIDIChannel(&dc, note->chan + 1);
-                              AColor::Line(dc, nr.x, nr.y+nr.height-1,
-                                    nr.x+nr.width-1, nr.y+nr.height-1);
-                           }
-                        }
-                     }
+                     DrawNoteSegment(dc, rect, x, x2, y, pitchHeight, marg, first, false, note->chan + 1, muted);
 
-                     nr.x = t2;
-                     curPitchOffset = itr->second;
-                     nr.y = track->PitchToY(note->pitch + curPitchOffset);
+                     x = x2;
+                     y = track->PitchToY(note->pitch + itr->second);
                      first = false;
                   }
 
-                  nr.width = TIME_TO_X(x1) - nr.x;
-
-                  if (nr.y + nr.height < rect.y + marg + 3) {
-                     // too high for window
-                     nr.y = rect.y;
-                     nr.height = marg;
-                     dc.SetBrush(*wxBLACK_BRUSH);
-                     dc.SetPen(*wxBLACK_PEN);
-                     dc.DrawRectangle(nr);
-                  } else if (nr.y >= rect.y + rect.height - marg - 1) {
-                     // too low for window
-                     nr.y = rect.y + rect.height - marg;
-                     nr.height = marg;
-                     dc.SetBrush(*wxBLACK_BRUSH);
-                     dc.SetPen(*wxBLACK_PEN);
-                     dc.DrawRectangle(nr);
-                  } else {
-                     nr.height = pitchHeight;
-                     if (nr.y + nr.height > rect.y + rect.height - marg)
-                        nr.height = rect.y + rect.height - nr.y;
-                     if (nr.y < rect.y + marg) {
-                        int offset = rect.y + marg - nr.y;
-                        nr.height -= offset;
-                        nr.y += offset;
-                     }
-                     if (muted)
-                        AColor::LightMIDIChannel(&dc, note->chan + 1);
-                     else
-                        AColor::MIDIChannel(&dc, note->chan + 1);
-                     dc.DrawRectangle(nr);
-                     if (drawLines) {
-                        AColor::LightMIDIChannel(&dc, note->chan + 1);
-                        if (first) {
-                           AColor::Line(dc, nr.x, nr.y, nr.x, nr.y + nr.height-1);
-                        }
-                        if (nr.width >= 1) {
-                           AColor::Line(dc, nr.x, nr.y, nr.x + nr.width-1, nr.y);
-                        }
-                        AColor::DarkMIDIChannel(&dc, note->chan + 1);
-                        if (nr.width >= 1) {
-                           AColor::Line(dc, nr.x, nr.y+nr.height-1,
-                                 nr.x+nr.width-1, nr.y+nr.height-1);
-                        }
-                        // Horizontal end line
-                        AColor::Line(dc, nr.x+nr.width-1, nr.y,
-                              nr.x+nr.width-1, nr.y+nr.height-1);
-                     }
-                  }
+                  DrawNoteSegment(dc, rect, x, TIME_TO_X(x1), y, pitchHeight, marg, first, true, note->chan + 1, muted);
                } else if (shape) {
                   // draw a shape according to attributes
                   // add 0.5 to pitch because pitches are plotted with
@@ -3334,6 +3239,60 @@ void TrackArtist::DrawNoteTrack(const NoteTrack *track,
    SonifyEndNoteForeground();
 }
 #endif // USE_MIDI
+
+void TrackArtist::DrawNoteSegment(wxDC & dc, const wxRect & rect, int x1, int x2, int y, int pitchHeight, int marg, bool first, bool last, int chan, bool muted)
+{
+   int width = x2 - x1;
+
+   bool drawLines = (pitchHeight > 2);
+
+   if (y + pitchHeight < rect.y + marg + 3) {
+      // too high for window
+      dc.SetBrush(*wxBLACK_BRUSH);
+      dc.SetPen(*wxBLACK_PEN);
+      dc.DrawRectangle(x1, rect.y, width, marg);
+   } else if (y >= rect.y + rect.height - marg - 1) {
+      // too low for window
+      dc.SetBrush(*wxBLACK_BRUSH);
+      dc.SetPen(*wxBLACK_PEN);
+      dc.DrawRectangle(x1, rect.y + rect.height - marg, width, marg);
+   } else {
+      int height = pitchHeight;
+      if (y + pitchHeight > rect.y + rect.height - marg)
+         height = rect.y + rect.height - y;
+      if (y < rect.y + marg) {
+         int offset = rect.y + marg - y;
+         height -= offset;
+         y += offset;
+      }
+      if (muted)
+         AColor::LightMIDIChannel(&dc, chan);
+      else
+         AColor::MIDIChannel(&dc, chan);
+      dc.DrawRectangle(x1, y, width, height);
+      if (drawLines) {
+         AColor::LightMIDIChannel(&dc, chan);
+         if (first) {
+            // Vertical starting line
+            AColor::Line(dc, x1, y, x1, y + pitchHeight - 1);
+         }
+         if (width >= 1) {
+            AColor::Line(dc, x1, y, x2 - 1, y);
+         }
+         AColor::DarkMIDIChannel(&dc, chan);
+         if (width >= 1) {
+            AColor::Line(dc, x1, y + pitchHeight - 1,
+                  x2 - 1, y + pitchHeight - 1);
+         }
+
+         if (last) {
+            // Vertical end line
+            AColor::Line(dc, x2 - 1, y,
+                  x2 - 1, y + pitchHeight - 1);
+         }
+      }
+   }
+}
 
 
 void TrackArtist::DrawLabelTrack(TrackPanelDrawingContext &context,
