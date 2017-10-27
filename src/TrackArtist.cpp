@@ -3258,7 +3258,7 @@ void TrackArtist::DrawNoteSegment(wxDC & dc, const wxRect & rect, int x1, int x2
       dc.DrawRectangle(x1, rect.y + rect.height - marg, width, marg);
    } else {
       int height = pitchHeight;
-      if (y + pitchHeight > rect.y + rect.height - marg)
+      if (y + height > rect.y + rect.height - marg)
          height = rect.y + rect.height - y;
       if (y < rect.y + marg) {
          int offset = rect.y + marg - y;
@@ -3274,21 +3274,21 @@ void TrackArtist::DrawNoteSegment(wxDC & dc, const wxRect & rect, int x1, int x2
          AColor::LightMIDIChannel(&dc, chan);
          if (first) {
             // Vertical starting line
-            AColor::Line(dc, x1, y, x1, y + pitchHeight - 1);
+            AColor::Line(dc, x1, y, x1, y + height - 1);
          }
          if (width >= 1) {
             AColor::Line(dc, x1, y, x2 - 1, y);
          }
          AColor::DarkMIDIChannel(&dc, chan);
          if (width >= 1) {
-            AColor::Line(dc, x1, y + pitchHeight - 1,
-                  x2 - 1, y + pitchHeight - 1);
+            AColor::Line(dc, x1, y + height - 1,
+                  x2 - 1, y + height - 1);
          }
 
          if (last) {
             // Vertical end line
             AColor::Line(dc, x2 - 1, y,
-                  x2 - 1, y + pitchHeight - 1);
+                  x2 - 1, y + height - 1);
          }
       }
    }
