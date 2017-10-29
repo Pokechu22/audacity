@@ -15,10 +15,10 @@ public:
   int channels;
   long buffer_len; // number of samples pointed to by buffer
   long index; // index into buffer
-  long total_frames; // number of frames in input audio 
+  long total_frames; // number of frames in input audio
                      // (returned by get_frames)
   double sample_rate;
-  Audio_mixer_reader(void *mixer, mixer_process_fn fn_ptr, int chans, 
+  Audio_mixer_reader(void *mixer, mixer_process_fn fn_ptr, int chans,
                      double srate, double end_time);
   void close();
   double get_sample_rate();

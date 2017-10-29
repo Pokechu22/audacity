@@ -13,7 +13,7 @@
 
 
 int scorealign(void *mixer, mixer_process_fn fn_ptr, int chans, double srate,
-                double end_time, Alg_seq *seq, SAProgress *progress, 
+                double end_time, Alg_seq *seq, SAProgress *progress,
                 ScoreAlignParams &params)
 {
     Scorealign sa;

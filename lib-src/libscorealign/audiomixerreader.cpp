@@ -18,8 +18,8 @@ double Audio_mixer_reader::get_sample_rate()
 }
 
 
-Audio_mixer_reader::Audio_mixer_reader(void *mixer_, 
-        mixer_process_fn fn_ptr, int chans, 
+Audio_mixer_reader::Audio_mixer_reader(void *mixer_,
+        mixer_process_fn fn_ptr, int chans,
         double srate, double end_time)
 {
     mixer = mixer_; // store in member variable
@@ -48,7 +48,7 @@ long Audio_mixer_reader::read(float *data, long n)
         for (int chan = 0; chan < channels; chan++) {
             // sum over channels within a frame
             if (index >= buffer_len * channels) {
-                buffer_len = 
+                buffer_len =
                    (*mixer_process) (mixer, &buffer, AMR_BUFFER_FRAMES);
                 // frame_count = mixer->Process(AMR_BUFFER_FRAMES);
                 // buffer = (float *) mixer->GetBuffer();
@@ -70,7 +70,7 @@ long Audio_mixer_reader::read(float *data, long n)
 void Audio_mixer_reader::close()
 {
     // mixer is deleted by the creator of this object, so don't delete here
-    buffer = NULL; 
+    buffer = NULL;
 }
 
 void Audio_mixer_reader::print_info()
