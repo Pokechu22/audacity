@@ -153,7 +153,7 @@
 
 // USE_MIDI must be defined in order for EXPERIMENTAL_SCOREALIGN to work
 #ifdef USE_MIDI
-//#define EXPERIMENTAL_SCOREALIGN
+#define EXPERIMENTAL_SCOREALIGN
 #endif
 
 //If you want any of these files, ask JKC.  They are not

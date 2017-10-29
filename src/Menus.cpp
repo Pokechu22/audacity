@@ -8149,7 +8149,7 @@ class ASAProgress final : public SAProgress {
          work = (is_audio[0] ? AUDIO_WORK_UNIT : MIDI_WORK_UNIT) * mFrames[0] +
                 (is_audio[1] ? AUDIO_WORK_UNIT : MIDI_WORK_UNIT) * f;
       }
-      int updateResult = mProgress->Update((int)(work), (int)(mTotalWork));
+      ProgressResult updateResult = mProgress->Update((int)(work), (int)(mTotalWork));
       return (updateResult == ProgressResult::Success);
    }
    bool set_matrix_progress(int cells) override {
@@ -8158,7 +8158,7 @@ class ASAProgress final : public SAProgress {
              (is_audio[0] ? AUDIO_WORK_UNIT : MIDI_WORK_UNIT) * mFrames[0] +
              (is_audio[1] ? AUDIO_WORK_UNIT : MIDI_WORK_UNIT) * mFrames[1];
       work += mCellCount * MATRIX_WORK_UNIT;
-      int updateResult = mProgress->Update((int)(work), (int)(mTotalWork));
+      ProgressResult updateResult = mProgress->Update((int)(work), (int)(mTotalWork));
       return (updateResult == ProgressResult::Success);
    }
    bool set_smoothing_progress(int i) override {
@@ -8168,7 +8168,7 @@ class ASAProgress final : public SAProgress {
              (is_audio[1] ? AUDIO_WORK_UNIT : MIDI_WORK_UNIT) * mFrames[1] +
              MATRIX_WORK_UNIT * mFrames[0] * mFrames[1];
       work += i * wxMax(mFrames[0], mFrames[1]) * SMOOTHING_WORK_UNIT;
-      int updateResult = mProgress->Update((int)(work), (int)(mTotalWork));
+      ProgressResult updateResult = mProgress->Update((int)(work), (int)(mTotalWork));
       return (updateResult == ProgressResult::Success);
    }
 };
@@ -8182,7 +8182,7 @@ long mixer_process(void *mixer, float **buffer, long n)
    return frame_count;
 }
 
-void AudacityProject::OnScoreAlign()
+void AudacityProject::OnScoreAlign(const CommandContext &context )
 {
    TrackListIterator iter(GetTracks());
    Track *t = iter.First();
@@ -8250,6 +8250,7 @@ void AudacityProject::OnScoreAlign()
    {
       Mixer mix(
          waveTracks,              // const WaveTrackConstArray &inputTracks
+         true,                    // mayThrow
          Mixer::WarpOptions{ mTracks->GetTimeTrack() }, // const WarpOptions &warpOptions
          0.0,                     // double startTime
          endTime,                 // double stopTime
