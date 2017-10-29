@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -17,13 +17,13 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v120_xp</PlatformToolset>
+    <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
@@ -79,6 +79,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\lib-src\libscorealign\audiomixerreader.cpp" />
     <ClCompile Include="..\..\..\lib-src\libscorealign\audioreader.cpp" />
     <ClCompile Include="..\..\..\lib-src\libscorealign\comp_chroma.cpp" />
     <ClCompile Include="..\..\..\lib-src\libscorealign\curvefit.cpp" />
@@ -87,9 +88,11 @@
     <ClCompile Include="..\..\..\lib-src\libscorealign\hillclimb.cpp" />
     <ClCompile Include="..\..\..\lib-src\libscorealign\regression.cpp" />
     <ClCompile Include="..\..\..\lib-src\libscorealign\sautils.cpp" />
+    <ClCompile Include="..\..\..\lib-src\libscorealign\scorealign-glue.cpp" />
     <ClCompile Include="..\..\..\lib-src\libscorealign\scorealign.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\lib-src\libscorealign\audiomixerreader.h" />
     <ClInclude Include="..\..\..\lib-src\libscorealign\audioreader.h" />
     <ClInclude Include="..\..\..\lib-src\libscorealign\comp_chroma.h" />
     <ClInclude Include="..\..\..\lib-src\libscorealign\curvefit.h" />
@@ -98,6 +101,7 @@
     <ClInclude Include="..\..\..\lib-src\libscorealign\hillclimb.h" />
     <ClInclude Include="..\..\..\lib-src\libscorealign\regression.h" />
     <ClInclude Include="..\..\..\lib-src\libscorealign\sautils.h" />
+    <ClInclude Include="..\..\..\lib-src\libscorealign\scorealign-glue.h" />
     <ClInclude Include="..\..\..\lib-src\libscorealign\scorealign.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
