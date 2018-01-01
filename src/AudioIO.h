@@ -706,6 +706,9 @@ private:
 #ifdef EXPERIMENTAL_MIDI_OUT
    //   MIDI_PLAYBACK:
    PmStream        *mMidiStream;
+#ifdef EXPERIMENTAL_MIDI_IN
+   PmStream        *mMidiInStream;
+#endif
    PmError          mLastPmError;
 
    /// Latency of MIDI synthesizer

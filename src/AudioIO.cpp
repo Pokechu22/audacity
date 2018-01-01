@@ -500,7 +500,11 @@ enum {
    // This is the least positive latency we can
    // specify to Pm_OpenOutput, 1 ms, which prevents immediate
    // scheduling of events:
-   MIDI_MINIMAL_LATENCY_MS = 1
+   MIDI_MINIMAL_LATENCY_MS = 1,
+#ifdef EXPERIMENTAL_MIDI_IN
+   // Buffer size for midi input, in # of events
+   MIDI_IN_BUFFER_SIZE = 100
+#endif
 };
 
 constexpr size_t TimeQueueGrainSize = 2000;
@@ -1037,6 +1041,9 @@ AudioIO::AudioIO()
 
 #ifdef EXPERIMENTAL_MIDI_OUT
    mMidiStream = NULL;
+#ifdef EXPERIMENTAL_MIDI_IN
+   mMidiInStream = NULL;
+#endif
    mMidiThreadFillBuffersLoopRunning = false;
    mMidiThreadFillBuffersLoopActive = false;
    mMidiStreamActive = false;
@@ -2353,6 +2360,9 @@ bool AudioIO::StartPortMidiStream()
    PmDeviceID playbackDevice = Pm_GetDefaultOutputDeviceID();
    wxString playbackDeviceName = gPrefs->Read(wxT("/MidiIO/PlaybackDevice"),
                                               wxT(""));
+   PmDeviceID recordingDevice = Pm_GetDefaultInputDeviceID();
+   wxString recordingDeviceName = gPrefs->Read(wxT("/MidiIO/RecordingDevice"),
+                                              wxT(""));
    mSynthLatency = gPrefs->Read(wxT("/MidiIO/SynthLatency"),
                                 DEFAULT_SYNTH_LATENCY);
    if (wxStrcmp(playbackDeviceName, wxT("")) != 0) {
@@ -2368,6 +2378,19 @@ bool AudioIO::StartPortMidiStream()
          }
       }
    } // (else playback device has Pm_GetDefaultOuputDeviceID())
+   if (wxStrcmp(recordingDeviceName, wxT("")) != 0) {
+      for (i = 0; i < Pm_CountDevices(); i++) {
+         const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
+         if (!info) continue;
+         if (!info->input) continue;
+         wxString interf = wxSafeConvertMB2WX(info->interf);
+         wxString name = wxSafeConvertMB2WX(info->name);
+         interf.Append(wxT(": ")).Append(name);
+         if (wxStrcmp(interf, playbackDeviceName) == 0) {
+            recordingDevice = i;
+         }
+      }
+   } // (else recording device has Pm_GetDefaultInputDeviceID())
 
    /* open output device */
    mLastPmError = Pm_OpenOutput(&mMidiStream,
@@ -2377,20 +2400,33 @@ bool AudioIO::StartPortMidiStream()
                                 &::MidiTime,
                                 NULL,
                                 MIDI_MINIMAL_LATENCY_MS);
-   if (mLastPmError == pmNoError) {
-      mMidiStreamActive = true;
-      mMidiPaused = false;
-      mMidiLoopPasses = 0;
-      mMidiOutputComplete = false;
-      mMaxMidiTimestamp = 0;
-      PrepareMidiIterator();
 
-      // It is ok to call this now, but do not send timestamped midi
-      // until after the first audio callback, which provides necessary
-      // data for MidiTime().
-      Pm_Synchronize(mMidiStream); // start using timestamps
-      // start midi output flowing (pending first audio callback)
-      mMidiThreadFillBuffersLoopRunning = true;
+   if (mLastPmError == pmNoError) {
+      mLastPmError = Pm_OpenInput(&mMidiInStream,
+                                recordingDevice,
+                                NULL,
+                                MIDI_IN_BUFFER_SIZE,
+                                &::MidiTime,
+                                NULL);
+
+      if (mLastPmError == pmNoError) {
+         mMidiStreamActive = true;
+         mMidiPaused = false;
+         mMidiLoopPasses = 0;
+         mMidiOutputComplete = false;
+         mMaxMidiTimestamp = 0;
+         PrepareMidiIterator();
+
+         // It is ok to call this now, but do not send timestamped midi
+         // until after the first audio callback, which provides necessary
+         // data for MidiTime().
+         Pm_Synchronize(mMidiStream); // start using timestamps
+         Pm_Synchronize(mMidiInStream);
+         // start midi output flowing (pending first audio callback)
+         mMidiThreadFillBuffersLoopRunning = true;
+      } else {
+         Pm_Close(mMidiStream);
+      }
    }
    return (mLastPmError == pmNoError);
 }
@@ -2451,6 +2487,7 @@ void AudioIO::StopStream()
    if( mPortStreamV19 == NULL
 #ifdef EXPERIMENTAL_MIDI_OUT
        && mMidiStream == NULL
+       && mMidiInStream == NULL
 #endif
      )
       return;
@@ -2586,6 +2623,8 @@ void AudioIO::StopStream()
       }
       Pm_Close(mMidiStream);
       mMidiStream = NULL;
+      Pm_Close(mMidiInStream);
+      mMidiInStream = NULL;
       mIterator->end();
 
       // set in_use flags to false
@@ -3663,8 +3702,7 @@ wxString AudioIO::GetDeviceInfo()
    return o.GetString();
 }
 
-#ifdef EXPERIMENTAL_MIDI_OUT
-// FIXME: When EXPERIMENTAL_MIDI_IN is added (eventually) this should also be enabled -- Poke
+#if defined(EXPERIMENTAL_MIDI_OUT) || defined(EXPERIMENTAL_MIDI_IN)
 wxString AudioIO::GetMidiDeviceInfo()
 {
    wxStringOutputStream o;
@@ -4406,6 +4444,15 @@ void AudioIO::FillMidiBuffers()
    if (actual_latency > mAudioOutLatency) {
        time += actual_latency - mAudioOutLatency;
    }
+
+   PmEvent buffer[MIDI_IN_BUFFER_SIZE];
+   int count = Pm_Read(mMidiInStream, buffer, MIDI_IN_BUFFER_SIZE);
+   wxASSERT(count >= 0); // i.e. no error
+   if (count != 0) {
+      // Just copy to the output stream
+      Pm_Write(mMidiStream, buffer, count);
+   }
+
    while (mNextEvent &&
           UncorrectedMidiEventTime() < time) {
       OutputEvent();

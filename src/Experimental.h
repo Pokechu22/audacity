@@ -149,6 +149,10 @@
 // b) Crashes with Sync-Lock (Bug 1719)
 // c) Needs UI design review.
 //#define EXPERIMENTAL_MIDI_STRETCHING
+// Poke, 31 Dec 2017
+// Enables MIDI recording
+// USE_MIDI must be defined in order for EXPERIMENTAL_MIDI_OUT to work
+#define EXPERIMENTAL_MIDI_IN
 #endif
 
 // USE_MIDI must be defined in order for EXPERIMENTAL_SCOREALIGN to work
