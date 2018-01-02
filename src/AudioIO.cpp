@@ -2347,7 +2347,6 @@ void AudioIO::PrepareMidiIterator(bool send, double offset)
 
 bool AudioIO::StartPortMidiStream()
 {
-   int i;
    int nTracks = mMidiPlaybackTracks.size();
    // Only start MIDI stream if there is an open track
    if (nTracks == 0)
@@ -2366,7 +2365,7 @@ bool AudioIO::StartPortMidiStream()
    mSynthLatency = gPrefs->Read(wxT("/MidiIO/SynthLatency"),
                                 DEFAULT_SYNTH_LATENCY);
    if (wxStrcmp(playbackDeviceName, wxT("")) != 0) {
-      for (i = 0; i < Pm_CountDevices(); i++) {
+      for (int i = 0; i < Pm_CountDevices(); i++) {
          const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
          if (!info) continue;
          if (!info->output) continue;
@@ -2379,14 +2378,14 @@ bool AudioIO::StartPortMidiStream()
       }
    } // (else playback device has Pm_GetDefaultOuputDeviceID())
    if (wxStrcmp(recordingDeviceName, wxT("")) != 0) {
-      for (i = 0; i < Pm_CountDevices(); i++) {
+      for (int i = 0; i < Pm_CountDevices(); i++) {
          const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
          if (!info) continue;
          if (!info->input) continue;
          wxString interf = wxSafeConvertMB2WX(info->interf);
          wxString name = wxSafeConvertMB2WX(info->name);
          interf.Append(wxT(": ")).Append(name);
-         if (wxStrcmp(interf, playbackDeviceName) == 0) {
+         if (wxStrcmp(interf, recordingDeviceName) == 0) {
             recordingDevice = i;
          }
       }
