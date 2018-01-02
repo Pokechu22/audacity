@@ -159,7 +159,10 @@ struct TransportTracks {
    WaveTrackArray playbackTracks;
    WaveTrackArray captureTracks;
 #ifdef EXPERIMENTAL_MIDI_OUT
-   NoteTrackConstArray midiTracks;
+   NoteTrackConstArray midiPlaybackTracks;
+#endif
+#ifdef EXPERIMENTAL_MIDI_IN
+   NoteTrackArray midiCaptureTracks;
 #endif
 
    // This is a subset of playbackTracks
@@ -782,6 +785,9 @@ private:
    /// used to send state changes that precede the selected notes
    bool             mSendMidiState;
    NoteTrackConstArray mMidiPlaybackTracks;
+#ifdef EXPERIMENTAL_MIDI_IN
+   NoteTrackArray   mMidiCaptureTracks;
+#endif
 #endif
 
 #ifdef EXPERIMENTAL_AUTOMATED_INPUT_LEVEL_ADJUSTMENT

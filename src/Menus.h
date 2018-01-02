@@ -74,6 +74,9 @@ void OnStop(const CommandContext &context );
 void OnPause(const CommandContext &context );
 void OnRecord(const CommandContext &context );
 void OnRecord2ndChoice(const CommandContext &context );
+#ifdef EXPERIMENTAL_MIDI_IN
+void OnRecordMidiTrack(const CommandContext &context );
+#endif
 void OnStopSelect(const CommandContext &context );
 void OnSkipStart(const CommandContext &context );
 void OnSkipEnd(const CommandContext &context );

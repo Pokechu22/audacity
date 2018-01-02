@@ -1582,7 +1582,7 @@ TransportTracks GetAllPlaybackTracks(TrackList &trackList, bool selectedOnly, bo
    result.playbackTracks = trackList.GetWaveTrackArray(selectedOnly);
 #ifdef EXPERIMENTAL_MIDI_OUT
    if (useMidi)
-      result.midiTracks = trackList.GetNoteTrackConstArray(selectedOnly);
+      result.midiPlaybackTracks = trackList.GetNoteTrackConstArray(selectedOnly);
 #else
    WXUNUSED(useMidi);
 #endif

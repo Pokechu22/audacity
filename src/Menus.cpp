@@ -118,6 +118,7 @@ simplifies construction of menu items.
 
 #include "SplashDialog.h"
 #include "widgets/HelpSystem.h"
+#include "widgets/ErrorDialog.h"
 #include "DeviceManager.h"
 
 #include "UndoManager.h"
@@ -876,6 +877,8 @@ void AudacityProject::CreateMenusAndCommands()
          FN(OnRecord2ndChoice),
          wxT("Shift+R")
       );
+
+      c->AddItem(wxT("MIDITrackRecord"), XXO("Record New MIDI Track"), FN(OnRecordMidiTrack));
 
       c->AddItem(wxT("TimerRecord"), XXO("&Timer Record..."), FN(OnTimerRecord), wxT("Shift+T"));
 
@@ -2911,6 +2914,45 @@ void AudacityProject::OnRecord2ndChoice(const CommandContext &WXUNUSED(context) 
 
    GetControlToolBar()->OnRecord(evt);
 }
+
+#ifdef EXPERIMENTAL_MIDI_IN
+void AudacityProject::OnRecordMidiTrack(const CommandContext &)
+{
+   CommandFlag flags = AlwaysEnabledFlag; // 0 means recalc flags.
+
+   // NB: The call may have the side effect of changing flags.
+   bool allowed = TryToMakeActionAllowed(
+      flags,
+      AudioIONotBusyFlag | CanStopAudioStreamFlag,
+      AudioIONotBusyFlag | CanStopAudioStreamFlag);
+
+   if( !allowed )
+      return;
+
+   TrackList *trackList = GetTracks();
+
+   TransportTracks transportTracks = GetAllPlaybackTracks(*trackList, false, true);
+   auto newTrack = GetTrackFactory()->NewNoteTrack();
+   transportTracks.midiCaptureTracks.push_back(Track::Pointer<NoteTrack>(trackList->Add(std::move(newTrack))));
+
+   AudioIOStartStreamOptions options(GetDefaultPlayOptions());
+   int token = gAudioIO->StartStream(transportTracks,
+                                       0, DBL_MAX, options);
+
+   if (token != 0) {
+      SetAudioIOToken(token);
+      //mBusyProject = this;
+
+      GetControlToolBar()->StartScrollingIfPreferred();
+   }
+   else {
+      // Show error message if stream could not be opened
+      ShowErrorDialog(this, _("Error"),
+                        _("Error opening sound device.\nTry changing the audio host, recording device and the project sample rate."),
+                        wxT("Error_opening_sound_device"));
+   }
+}
+#endif
 
 // The code for "OnPlayStopSelect" is simply the code of "OnPlayStop" and "OnStopSelect" merged.
 void AudacityProject::OnPlayStopSelect(const CommandContext &WXUNUSED(context) )

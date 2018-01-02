@@ -1827,7 +1827,14 @@ int AudioIO::StartStream(const TransportTracks &tracks,
    mCaptureTracks = tracks.captureTracks;
    mPlaybackTracks = tracks.playbackTracks;
 #ifdef EXPERIMENTAL_MIDI_OUT
-   mMidiPlaybackTracks = tracks.midiTracks;
+   mMidiPlaybackTracks = tracks.midiPlaybackTracks;
+#endif
+#ifdef EXPERIMENTAL_MIDI_IN
+   mMidiCaptureTracks = tracks.midiCaptureTracks;
+   for (auto t : mMidiCaptureTracks) {
+      Alg_seq_ptr seq = &t->GetSeq();
+      seq->set_in_use(true);
+   }
 #endif
 
    bool commit = false;
@@ -1838,6 +1845,9 @@ int AudioIO::StartStream(const TransportTracks &tracks,
          mCaptureTracks.clear();
 #ifdef EXPERIMENTAL_MIDI_OUT
          mMidiPlaybackTracks.clear();
+#endif
+#ifdef EXPERIMENTAL_MIDI_IN
+         mMidiCaptureTracks.clear();
 #endif
 
          // Don't cause a busy wait in the audio thread after stopping scrubbing
@@ -1866,7 +1876,7 @@ int AudioIO::StartStream(const TransportTracks &tracks,
 
    if (tracks.playbackTracks.size() > 0 
 #ifdef EXPERIMENTAL_MIDI_OUT
-      || tracks.midiTracks.size() > 0
+      || tracks.midiPlaybackTracks.size() > 0
 #endif
       )
       playbackChannels = 2;
@@ -2347,9 +2357,10 @@ void AudioIO::PrepareMidiIterator(bool send, double offset)
 
 bool AudioIO::StartPortMidiStream()
 {
-   int nTracks = mMidiPlaybackTracks.size();
    // Only start MIDI stream if there is an open track
-   if (nTracks == 0)
+   bool hasPlayback = (mMidiPlaybackTracks.size() != 0);
+   bool hasRecord = (mMidiCaptureTracks.size() != 0);
+   if (!hasPlayback && !hasRecord)
       return false;
 
    //wxPrintf("StartPortMidiStream: mT0 %g mTime %g\n",
@@ -2400,32 +2411,33 @@ bool AudioIO::StartPortMidiStream()
                                 NULL,
                                 MIDI_MINIMAL_LATENCY_MS);
 
-   if (mLastPmError == pmNoError) {
+   if (mLastPmError == pmNoError && hasRecord) {
+      // Now try to start recording
       mLastPmError = Pm_OpenInput(&mMidiInStream,
                                 recordingDevice,
                                 NULL,
                                 MIDI_IN_BUFFER_SIZE,
                                 &::MidiTime,
                                 NULL);
+   }
 
-      if (mLastPmError == pmNoError) {
-         mMidiStreamActive = true;
-         mMidiPaused = false;
-         mMidiLoopPasses = 0;
-         mMidiOutputComplete = false;
-         mMaxMidiTimestamp = 0;
-         PrepareMidiIterator();
+   if (mLastPmError == pmNoError) {
+      mMidiStreamActive = true;
+      mMidiPaused = false;
+      mMidiLoopPasses = 0;
+      mMidiOutputComplete = false;
+      mMaxMidiTimestamp = 0;
+      PrepareMidiIterator();
 
-         // It is ok to call this now, but do not send timestamped midi
-         // until after the first audio callback, which provides necessary
-         // data for MidiTime().
-         Pm_Synchronize(mMidiStream); // start using timestamps
-         Pm_Synchronize(mMidiInStream);
-         // start midi output flowing (pending first audio callback)
-         mMidiThreadFillBuffersLoopRunning = true;
-      } else {
-         Pm_Close(mMidiStream);
-      }
+      // It is ok to call this now, but do not send timestamped midi
+      // until after the first audio callback, which provides necessary
+      // data for MidiTime().
+      Pm_Synchronize(mMidiStream); // start using timestamps
+      Pm_Synchronize(mMidiInStream);
+      // start midi output flowing (pending first audio callback)
+      mMidiThreadFillBuffersLoopRunning = true;
+   } else {
+      Pm_Close(mMidiStream);
    }
    return (mLastPmError == pmNoError);
 }
@@ -2627,9 +2639,11 @@ void AudioIO::StopStream()
       mIterator->end();
 
       // set in_use flags to false
-      int nTracks = mMidiPlaybackTracks.size();
-      for (int i = 0; i < nTracks; i++) {
-         const auto t = mMidiPlaybackTracks[i].get();
+      for (const auto t : mMidiPlaybackTracks) {
+         Alg_seq_ptr seq = &t->GetSeq();
+         seq->set_in_use(false);
+      }
+      for (const auto t : mMidiCaptureTracks) {
          Alg_seq_ptr seq = &t->GetSeq();
          seq->set_in_use(false);
       }
@@ -4444,12 +4458,32 @@ void AudioIO::FillMidiBuffers()
        time += actual_latency - mAudioOutLatency;
    }
 
-   PmEvent buffer[MIDI_IN_BUFFER_SIZE];
-   int count = Pm_Read(mMidiInStream, buffer, MIDI_IN_BUFFER_SIZE);
-   wxASSERT(count >= 0); // i.e. no error
-   if (count != 0) {
-      // Just copy to the output stream
-      Pm_Write(mMidiStream, buffer, count);
+   if (mMidiInStream) {
+      PmEvent buffer[MIDI_IN_BUFFER_SIZE];
+      int count = Pm_Read(mMidiInStream, buffer, MIDI_IN_BUFFER_SIZE);
+      wxASSERT(count >= 0); // i.e. no error
+      if (count != 0) {
+         // Copy to the output stream
+         Pm_Write(mMidiStream, buffer, count);
+      }
+      // And the events to the tracks
+      for (const auto track : mMidiCaptureTracks) {
+         Alg_seq_ptr seq = &track->GetSeq();
+         for (int i = 0; i < count; i++) {
+            PmEvent evt = buffer[i];
+            if ((evt.message & 0xF0) != 0x90)
+               continue;
+
+            int chan    = (evt.message & 0x0F);
+            float pitch = (evt.message & 0x7F00) >> 8;
+            float vel   = (evt.message & 0x7F0000) >> 8;
+            if (vel == 0)
+               continue;
+            auto note = seq->create_note(time, chan, (int)pitch, pitch, vel, .25);
+            seq->add_event(note, 0);
+         }
+         seq->set_real_dur(time + .25); // .25 is temp
+      }
    }
 
    while (mNextEvent &&
