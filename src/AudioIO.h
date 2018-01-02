@@ -787,6 +787,7 @@ private:
    NoteTrackConstArray mMidiPlaybackTracks;
 #ifdef EXPERIMENTAL_MIDI_IN
    NoteTrackArray   mMidiCaptureTracks;
+   Alg_event_ptr    mActiveNotes[16][128] = {};
 #endif
 #endif
 

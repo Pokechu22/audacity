@@ -4466,21 +4466,39 @@ void AudioIO::FillMidiBuffers()
          // Copy to the output stream
          Pm_Write(mMidiStream, buffer, count);
       }
+      // Update durations
+      for (int chan = 0; chan < 16; chan++) {
+         for (int pitch = 0; pitch < 128; pitch++) {
+            Alg_event_ptr evt = mActiveNotes[chan][pitch];
+            if (evt) {
+               evt->set_duration(time - evt->get_start_time());
+            }
+         }
+      }
       // And the events to the tracks
       for (const auto track : mMidiCaptureTracks) {
          Alg_seq_ptr seq = &track->GetSeq();
          for (int i = 0; i < count; i++) {
             PmEvent evt = buffer[i];
-            if ((evt.message & 0xF0) != 0x90)
+            int action = (evt.message & 0xF0);
+            if (action != 0x90 && action != 0x80)
                continue;
 
             int chan    = (evt.message & 0x0F);
-            float pitch = (evt.message & 0x7F00) >> 8;
+            int pitch   = (evt.message & 0x7F00) >> 8;
             float vel   = (evt.message & 0x7F0000) >> 8;
-            if (vel == 0)
-               continue;
-            auto note = seq->create_note(time, chan, (int)pitch, pitch, vel, .25);
-            seq->add_event(note, 0);
+            bool noteOn = (action == 0x90 && vel != 0);
+            if (noteOn) {
+               auto note = seq->create_note(time, chan, pitch, pitch, vel, 0);
+               seq->add_event(note, 0);
+               mActiveNotes[chan][pitch] = note;
+            } else {
+               if (action == 0x90) {
+                  vel = 64;
+               }
+               // Stop updating the duration (should probably do some more stuff here)
+               mActiveNotes[chan][pitch] = nullptr;
+            }
          }
          seq->set_real_dur(time + .25); // .25 is temp
       }
