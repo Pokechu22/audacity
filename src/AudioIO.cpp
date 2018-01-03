@@ -4556,7 +4556,8 @@ void AudioIO::FillMidiBuffers()
                seq->add_event(update, 0);
             }
          }
-         seq->set_real_dur(time + .25); // .25 is temp
+         // Extend the total duration
+         seq->set_real_dur(time);
       }
    }
 
