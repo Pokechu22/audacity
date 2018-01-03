@@ -4481,23 +4481,79 @@ void AudioIO::FillMidiBuffers()
          for (int i = 0; i < count; i++) {
             PmEvent evt = buffer[i];
             int action = (evt.message & 0xF0);
-            if (action != 0x90 && action != 0x80)
-               continue;
+            int chan   = (evt.message & 0x0F);
+            if (action == 0x90 || action == 0x80) {
+               // Note on or note off
+               int pitch = (evt.message & 0x7F00) >> 8;
+               float vel = (evt.message & 0x7F0000) >> 16;
 
-            int chan    = (evt.message & 0x0F);
-            int pitch   = (evt.message & 0x7F00) >> 8;
-            float vel   = (evt.message & 0x7F0000) >> 8;
-            bool noteOn = (action == 0x90 && vel != 0);
-            if (noteOn) {
-               auto note = seq->create_note(time, chan, pitch, pitch, vel, 0);
-               seq->add_event(note, 0);
-               mActiveNotes[chan][pitch] = note;
-            } else {
-               if (action == 0x90) {
-                  vel = 64;
+               bool noteOn = (action == 0x90 && vel != 0);
+
+               if (noteOn) {
+                  auto note = seq->create_note(time, chan, pitch, pitch, vel, 0);
+                  seq->add_event(note, 0);
+                  mActiveNotes[chan][pitch] = note;
+               } else {
+                  if (action == 0x90) {
+                     // A note on with a velocity of 0 is equivilent to a note off with a velocity of 64
+                     vel = 64;
+                  }
+                  // Stop updating the duration
+                  // Allegro doesn't actually record note-off velocities...
+                  mActiveNotes[chan][pitch] = nullptr;
                }
-               // Stop updating the duration (should probably do some more stuff here)
-               mActiveNotes[chan][pitch] = nullptr;
+            } else if (action == 0xA0) {
+               // Poly key pressure
+               int pitch = (evt.message & 0x7F00) >> 8;
+               int pressure = (evt.message & 0x7F0000) >> 16;
+               Alg_parameter param;
+               param.attr = symbol_table.insert_string("pressurer");
+               param.r = pressure / 127.0;
+               auto update = seq->create_update(time, chan, pitch);
+               update->set_parameter(&param);
+               seq->add_event(update, 0);
+            } else if (action == 0xB0) {
+               // Controller change
+               int num = (evt.message & 0x7F00) >> 8;
+               int val = (evt.message & 0x7F0000) >> 16;
+               char name[32];
+               sprintf(name, "control%dr", num);
+               Alg_parameter param;
+               param.attr = symbol_table.insert_string(name);
+               param.r = val / 127.0;
+               auto update = seq->create_update(time, chan, -1);
+               update->set_parameter(&param);
+               seq->add_event(update, 0);
+            } else if (action == 0xC0) {
+               // Program change
+               int num = (evt.message & 0x7F00) >> 8;
+               Alg_parameter param;
+               param.attr = symbol_table.insert_string("programi");
+               param.i = num;
+               auto update = seq->create_update(time, chan, -1);
+               update->set_parameter(&param);
+               seq->add_event(update, 0);
+            } else if (action == 0xD0) {
+               // Channel pressure
+               int pressure = (evt.message & 0x7F00) >> 8;
+               Alg_parameter param;
+               param.attr = symbol_table.insert_string("pressurer");
+               param.r = pressure / 127.0;
+               auto update = seq->create_update(time, chan, -1);
+               update->set_parameter(&param);
+               seq->add_event(update, 0);
+            } else if (action == 0xE0) {
+               // Pitch bend
+               int bendLSB = (evt.message & 0x7F00) >> 8;
+               int bendMSB = (evt.message & 0x7F0000) >> 16;
+               int bend = (bendMSB << 7) | bendLSB;
+               double algBend = (bend - 0x2000) / (double)0x2000; // from -1 to 1
+               Alg_parameter param;
+               param.attr = symbol_table.insert_string("bendr");
+               param.r = algBend;
+               auto update = seq->create_update(time, chan, -1);
+               update->set_parameter(&param);
+               seq->add_event(update, 0);
             }
          }
          seq->set_real_dur(time + .25); // .25 is temp
