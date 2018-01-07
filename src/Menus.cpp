@@ -6959,18 +6959,25 @@ AudacityProject *AudacityProject::DoImportMIDI(
       pProject = pNewProject = CreateNewAudacityProject();
    auto cleanup = finally( [&] { if ( pNewProject ) pNewProject->Close(true); } );
 
-   auto newTrack = pProject->GetTrackFactory()->NewNoteTrack();
+   auto before = pProject->mTracks->size();
 
-   if (::ImportMIDI(fileName, newTrack.get())) {
+   if (::ImportMIDI(fileName, pProject->GetTrackFactory(), pProject->GetTracks())) {
 
       pProject->SelectNone();
-      auto pTrack = pProject->mTracks->Add(std::move(newTrack));
-      pTrack->SetSelected(true);
+      TrackListIterator iter(pProject->GetTracks());
+      Track *t = iter.First();
+      auto i = 0u;
+      while (t) {
+         if (i++ > before) {
+            t->SetSelected(true);
+         }
+
+         pProject->ZoomAfterImport(t);
+         t = iter.Next();
+      }
 
       pProject->PushState(wxString::Format(_("Imported MIDI from '%s'"),
          fileName), _("Import MIDI"));
-
-      pProject->ZoomAfterImport(pTrack);
       pNewProject = nullptr;
 
       wxGetApp().AddFileToHistory(fileName);
