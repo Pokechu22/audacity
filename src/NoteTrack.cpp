@@ -1043,7 +1043,15 @@ NoteTrackDisplayData::NoteTrackDisplayData(const NoteTrack* track, const wxRect 
    mY(r.y), mHeight(r.height)
 {
    auto span = mTopNote - mBottomNote + 1; // + 1 to make sure it includes both
-   mPitchHeight = mHeight / ((float) span + 2); // + 2 again to leave padding for the note margin
+   mPitchHeight = mHeight / ((float) span + 1); // +1 for the margin
+   if (mPitchHeight < mHeight / 2) {
+      // Simple margin
+      mMargin = mPitchHeight / 2;
+   } else {
+      // More complex margin
+      mMargin = mHeight / 4;
+      mPitchHeight = (mHeight / 2) / ((float) span); // No more margin
+   }
    mBottom = r.y + r.height - GetNoteMargin() - 1 - GetPitchHeight(1) +
             (mBottomNote / 12) * GetOctaveHeight() +
                GetNotePos(mBottomNote % 12);
@@ -1055,7 +1063,7 @@ int NoteTrackDisplayData::GetPitchHeight(int factor) const
 }
 
 int NoteTrackDisplayData::GetNoteMargin() const
-{ return std::min(mHeight / 4, (GetPitchHeight(1) + 1) / 2); }
+{ return mMargin; }
 
 int NoteTrackDisplayData::IPitchToY(int p) const
 { return mBottom - (p / 12) * GetOctaveHeight() - GetNotePos(p % 12); }
@@ -1067,7 +1075,9 @@ int NoteTrackDisplayData::YToIPitch(int y) const
    y -= octave * GetOctaveHeight();
    // result is approximate because C and G are one pixel taller than
    // mPitchHeight.
-   return (y / GetPitchHeight(1)) + octave * 12;
+   // Poke 1-13-18: However in practice this seems not to be an issue,
+   // as long as we use mPitchHeight and not the rounded version
+   return (y / mPitchHeight) + octave * 12;
 }
 
 const float NoteTrack::ZoomStep = powf( 2.0f, 0.25f );

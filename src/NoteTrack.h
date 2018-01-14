@@ -239,6 +239,7 @@ private:
    const int mY, mHeight;
    float mPitchHeight;
    int mBottom;
+   int mMargin;
 
 public:
    NoteTrackDisplayData(const NoteTrack* track, const wxRect &r);
