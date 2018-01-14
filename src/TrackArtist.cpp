@@ -608,11 +608,11 @@ void TrackArtist::DrawVRuler
             if (br.y < top) {
                br.height -= top - br.y;
                br.y = top;
-               if (br.height <= 1) continue; // Also cannot fit
             }
             if (br.y + br.height > bottom) {
                br.height = br.y - bottom;
             }
+            if (br.height <= 1) continue; // Also cannot fit
             dc->SetPen(hilitePen);
             dc->DrawRectangle(br);
             dc->SetPen(*wxBLACK_PEN);
