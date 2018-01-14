@@ -87,8 +87,6 @@ class AUDACITY_DLL_API NoteTrack final
    double GetStartTime() const override;
    double GetEndTime() const override;
 
-   void SetHeight(int h) override;
-
    Alg_seq &GetSeq() const;
 
    void WarpAndTransposeNotes(double t0, double t1,
@@ -126,21 +124,22 @@ class AUDACITY_DLL_API NoteTrack final
    bool StretchRegion
       ( QuantizedTimeAndBeat t0, QuantizedTimeAndBeat t1, double newDur );
 
+   /// Gets the current bottom note (a pitch)
    int GetBottomNote() const { return mBottomNote; }
-   int GetPitchHeight(int factor) const
-   { return std::max(1, (int)(factor * mPitchHeight)); }
-   void SetPitchHeight(int rectHeight, float h)
-   {
-      // Impose certain zoom limits
-      auto octavePadding = 2 * 10; // 10 octaves times 2 single-pixel seperations per pixel
-      auto availableHeight = rectHeight - octavePadding;
-      auto numNotes = 128.f;
-      auto minSpacePerNote =
-         std::max((float)MinPitchHeight, availableHeight / numNotes);
-      mPitchHeight =
-         std::max(minSpacePerNote,
-                  std::min((float)MaxPitchHeight, h));
-   }
+   /// Gets the current top note (a pitch)
+   int GetTopNote() const { return mTopNote; }
+   /// Sets the bottom note (a pitch), making sure that it is never greater than the top note.
+   void SetBottomNote(int note);
+   /// Sets the top note (a pitch), making sure that it is never less than the bottom note.
+   void SetTopNote(int note);
+   /// Sets the top and bottom note (both pitches) automatically, swapping them if needed.
+   void SetNoteRange(int note1, int note2);
+
+   /// Zooms so that the entire track is visible
+   void ZoomMaxExtent() { SetNoteRange(MinPitch, MaxPitch); }
+   /// Shifts all notes vertically by the given pitch
+   void ShiftNoteRange(int offset);
+
    /// Zooms out a constant factor (subject to zoom limits)
    void ZoomOut(const wxRect &rect, int y) { Zoom(rect, y, 1.0f / ZoomStep, true); }
    /// Zooms in a contant factor (subject to zoom limits)
@@ -149,15 +148,6 @@ class AUDACITY_DLL_API NoteTrack final
    /// If center is true, the result will be centered at y.
    void Zoom(const wxRect &rect, int y, float multiplier, bool center);
    void ZoomTo(const wxRect &rect, int start, int end);
-   void SetBottomNote(int note)
-   {
-      if (note < 0)
-         note = 0;
-      else if (note > 96)
-         note = 96;
-
-      mBottomNote = note;
-   }
 
 #if 0
    // Vertical scrolling is performed by dragging the keyboard at
@@ -217,7 +207,7 @@ class AUDACITY_DLL_API NoteTrack final
    float mVelocity; // velocity offset
 #endif
 
-   int mBottomNote;
+   int mBottomNote, mTopNote;
 #if 0
    // Also unused from vertical scrolling
    int mStartBottomNote;
@@ -227,6 +217,7 @@ class AUDACITY_DLL_API NoteTrack final
    // but it is rounded off whenever drawing:
    float mPitchHeight;
 
+   enum { MinPitch = 0, MaxPitch = 127 };
    enum { MinPitchHeight = 1, MaxPitchHeight = 25 };
    static const float ZoomStep;
 
@@ -239,17 +230,16 @@ protected:
    std::shared_ptr<TrackVRulerControls> GetVRulerControls() override;
 };
 
+/// Data used to display a note track
 class NoteTrackDisplayData {
 private:
    // Information from the track
-   const int mBottomNote;
-   float mPitchHeight;
+   const int mBottomNote, mTopNote;
    // Information from the rect
    const int mY, mHeight;
-   // mBottom is the Y offset of pitch 0 (normally off screen)
-   // Used so that mBottomNote is located at
-   // mY + mHeight - (GetNoteMargin() + 1 + GetPitchHeight())
+   float mPitchHeight;
    int mBottom;
+
 public:
    NoteTrackDisplayData(const NoteTrack* track, const wxRect &r);
 
@@ -281,7 +271,6 @@ public:
    // of the line separating B and C
    int GetWhitePos(int i) const { return 1 + (i * GetOctaveHeight()) / 7; }
 };
-
 #endif // USE_MIDI
 
 #ifndef SONIFY
