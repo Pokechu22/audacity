@@ -40,6 +40,7 @@ public:
        const wxMouseState &state, const wxRect &rect,
        const std::shared_ptr<NoteTrack> &pTrack);
 
+   std::shared_ptr<Track> GetTrack() const { return mpTrack.lock(); }
    int GetChannel() const { return mChannel; }
 
    static UIHandle::Result NeedChangeHighlight
