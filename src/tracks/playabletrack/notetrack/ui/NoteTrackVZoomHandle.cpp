@@ -145,6 +145,7 @@ HitTestPreview NoteTrackVZoomHandle::Preview
 const int kZoomIn = 6;
 const int kZoomOut = 7;
 const int kZoomReset = 8;
+const int kZoomMax = 9;
 
 enum {
    OnZoomFitVerticalID = 20000,
@@ -162,6 +163,8 @@ enum {
    // Reserve an ample block of ids for spectrum scale types
    OnFirstSpectrumScaleID,
    OnLastSpectrumScaleID = OnFirstSpectrumScaleID + 19,
+
+   OnZoomMaxID,
 };
 ///////////////////////////////////////////////////////////////////////////////
 // Table class
@@ -185,6 +188,7 @@ protected:
 // void OnZoomHalfWave(wxCommandEvent&){ OnZoom( kZoomHalfWave );};
    void OnZoomInVertical(wxCommandEvent&){ OnZoom( kZoomIn );};
    void OnZoomOutVertical(wxCommandEvent&){ OnZoom( kZoomOut );};
+   void OnZoomMax(wxCommandEvent&){ OnZoom( kZoomMax );};
 
 private:
    void DestroyMenu() override
@@ -209,7 +213,7 @@ void NoteTrackVRulerMenuTable::InitMenu(Menu *WXUNUSED(pMenu), void *pUserData)
 void NoteTrackVRulerMenuTable::OnZoom( int iZoomCode ){
    switch( iZoomCode ){
    case kZoomReset:
-      mpData->pTrack->ZoomMaxExtent();
+      mpData->pTrack->ZoomAllNotes();
       break;
    case kZoomIn:
       mpData->pTrack->ZoomIn(mpData->rect, mpData->yy);
@@ -217,7 +221,9 @@ void NoteTrackVRulerMenuTable::OnZoom( int iZoomCode ){
    case kZoomOut:
       mpData->pTrack->ZoomOut(mpData->rect, mpData->yy);
       break;
-
+   case kZoomMax:
+      mpData->pTrack->ZoomMaxExtent();
+      break;
    }
    GetActiveProject()->ModifyState(false);
 }
@@ -226,6 +232,7 @@ void NoteTrackVRulerMenuTable::OnZoom( int iZoomCode ){
 BEGIN_POPUP_MENU(NoteTrackVRulerMenuTable)
 
    POPUP_MENU_ITEM(OnZoomResetID,      _("Zoom Reset\tShift-Right-Click"), OnZoomReset)
+   POPUP_MENU_ITEM(OnZoomMaxID,        _("Max Zoom"), OnZoomMax)
 
    POPUP_MENU_SEPARATOR()
    POPUP_MENU_ITEM(OnZoomInVerticalID,  _("Zoom In\tLeft-Click/Left-Drag"),  OnZoomInVertical)
@@ -294,8 +301,15 @@ UIHandle::Result NoteTrackVZoomHandle::Release
    }
    else if (event.ShiftDown() || event.RightUp()) {
       if (event.ShiftDown() && event.RightUp()) {
-         // Zoom out completely
-         pTrack->ZoomMaxExtent();
+         auto oldBotNote = pTrack->GetBottomNote();
+         auto oldTopNote = pTrack->GetTopNote();
+         // Zoom out to show all notes
+         pTrack->ZoomAllNotes();
+         if (pTrack->GetBottomNote() == oldBotNote &&
+               pTrack->GetTopNote() == oldTopNote) {
+            // However if we are already showing all notes, zoom out further
+            pTrack->ZoomMaxExtent();
+         }
       } else {
          // Zoom out
          pTrack->ZoomOut(evt.rect, mZoomEnd);
