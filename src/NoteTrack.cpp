@@ -1073,15 +1073,37 @@ NoteTrackDisplayData::NoteTrackDisplayData(const NoteTrack* track, const wxRect 
    mY(r.y), mHeight(r.height)
 {
    auto span = mTopNote - mBottomNote + 1; // + 1 to make sure it includes both
-   mPitchHeight = mHeight / ((float) span + 1); // +1 for the margin
-   if (mPitchHeight < mHeight / 2) {
-      // Simple margin
-      mMargin = mPitchHeight / 2;
-   } else {
-      // More complex margin
-      mMargin = mHeight / 4;
-      mPitchHeight = (mHeight / 2) / ((float) span); // No more margin
+
+   mMargin = std::min((int) (mHeight / (float)(span)) / 2, mHeight / 4);
+
+   // Count the number of dividers between B/C and E/F
+   int numC, numF;
+   auto botOctave = mBottomNote / 12, botNote = mBottomNote % 12;
+   auto topOctave = mTopNote / 12, topNote = mTopNote % 12;
+   if (topOctave == botOctave)
+   {
+      if (botNote == 0) numC = 1;
+      if (topNote <= 5) numF = 1;
    }
+   else
+   {
+      numC = topOctave - botOctave;
+      numF = topOctave - botOctave - 1;
+      if (botNote == 0) numC++;
+      if (botNote <= 5) numF++;
+      if (topOctave <= 5) numF++;
+   }
+   // Effective space, excluding the margins and the lines between some notes
+   auto effectiveHeight = mHeight - (2 * (mMargin + 1)) - numC - numF;
+   // Guarenteed that both the bottom and top notes will be visible
+   // (assuming that the clamping below does not happen)
+   mPitchHeight = effectiveHeight / ((float) span);
+
+   if (mPitchHeight < NoteTrack::MinPitchHeight)
+      mPitchHeight = NoteTrack::MinPitchHeight;
+   if (mPitchHeight > NoteTrack::MaxPitchHeight)
+      mPitchHeight = NoteTrack::MaxPitchHeight;
+
    mBottom = r.y + r.height - GetNoteMargin() - 1 - GetPitchHeight(1) +
             (mBottomNote / 12) * GetOctaveHeight() +
                GetNotePos(mBottomNote % 12);
