@@ -2646,7 +2646,7 @@ void AudioIO::StopStream()
          Alg_seq_ptr seq = &t->GetSeq();
          seq->set_in_use(false);
       }
-      for (const auto t : mMidiCaptureTracks) {
+      for (auto t : mMidiCaptureTracks) {
          Alg_seq_ptr seq = &t->GetSeq();
          seq->set_in_use(false);
       }
@@ -4479,7 +4479,7 @@ void AudioIO::FillMidiBuffers()
          }
       }
       // And the events to the tracks
-      for (const auto track : mMidiCaptureTracks) {
+      for (auto track : mMidiCaptureTracks) {
          Alg_seq_ptr seq = &track->GetSeq();
          for (int i = 0; i < count; i++) {
             PmEvent evt = buffer[i];
