@@ -1878,6 +1878,9 @@ int AudioIO::StartStream(const TransportTracks &tracks,
 #ifdef EXPERIMENTAL_MIDI_OUT
       || tracks.midiPlaybackTracks.size() > 0
 #endif
+#ifdef EXPERIMENTAL_MIDI_IN
+      || midiCaptureTracks.size() > 0
+#endif
       )
       playbackChannels = 2;
 
@@ -1915,7 +1918,7 @@ int AudioIO::StartStream(const TransportTracks &tracks,
 
    bool successMidi = true;
 
-   if(!mMidiPlaybackTracks.empty()){
+   if(!mMidiPlaybackTracks.empty() || !mMidiCaptureTracks.empty()){
       successMidi = StartPortMidiStream();
    }
 
