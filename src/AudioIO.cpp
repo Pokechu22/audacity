@@ -1879,7 +1879,7 @@ int AudioIO::StartStream(const TransportTracks &tracks,
       || tracks.midiPlaybackTracks.size() > 0
 #endif
 #ifdef EXPERIMENTAL_MIDI_IN
-      || midiCaptureTracks.size() > 0
+      || tracks.midiCaptureTracks.size() > 0
 #endif
       )
       playbackChannels = 2;
